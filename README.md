@@ -32,11 +32,10 @@ La estructura general esperada del proyecto es la siguiente:
 
 ```text
 src/main/java/com/umg/sgau/
+├── config/
+├── security/
 ├── common/
-│   ├── config/
-│   ├── exception/
-│   ├── response/
-│   └── security/
+├── exception/
 ├── usuario/
 ├── estudiante/
 ├── docente/
@@ -47,14 +46,14 @@ src/main/java/com/umg/sgau/
 └── nota/
 ```
 
-Los componentes transversales y compartidos deben colocarse dentro de `common`, mientras que la lógica específica de cada dominio debe mantenerse dentro de su respectivo módulo.
+Los paquetes `config`, `security`, `common` y `exception` deben ubicarse directamente dentro del paquete base `com.umg.sgau`. La lógica específica de cada dominio debe mantenerse dentro de su respectivo módulo.
 
-### Paquetes comunes
+### Paquetes generales
 
-- `common/config`: configuraciones generales y compartidas de la aplicación.
-- `common/exception`: manejo centralizado de excepciones y errores.
-- `common/response`: estructuras estandarizadas para las respuestas de la API.
-- `common/security`: configuración de autenticación, autorización y Spring Security.
+- `config`: configuraciones generales de la aplicación.
+- `security`: configuración de autenticación, autorización y Spring Security.
+- `common`: elementos reutilizables y compartidos entre distintos dominios.
+- `exception`: manejo general y centralizado de excepciones.
 
 ## Estructura esperada por dominio
 
@@ -70,6 +69,8 @@ dominio/
 ├── service/
 └── serviceimpl/
 ```
+
+Cada estudiante será responsable de crear únicamente la estructura correspondiente al dominio que le fue asignado en su propia rama `feature`.
 
 ### Responsabilidad de cada paquete
 
@@ -139,4 +140,3 @@ dominio/
 Las credenciales, cadenas de conexión, claves secretas y configuraciones sensibles no deben publicarse en GitHub ni compartirse dentro del repositorio.
 
 Archivos como `application.properties`, `application.yml`, `application-dev.properties`, `application-prod.properties`, `.env` y `.env.*` deben mantenerse como configuración local o gestionarse mediante variables de entorno.
-
