@@ -26,6 +26,10 @@ public interface CarreraRepository extends JpaRepository<Carrera, Long> {
 
     Page<Carrera> findByActivo(Boolean activo, Pageable pageable);
 
+    /*
+    * Realiza una busqueda de pagina de todas las carreras que cumplas con los filtros opciones si viene el texto null
+    * no se aplican los filtros
+     */
     @Query("""
             SELECT c
             FROM Carrera c
