@@ -1,5 +1,7 @@
 package com.umg.sgau.estudiante.controller;
 
+import com.umg.sgau.estudiante.dto.EstudianteCreateRequestDTO;
+import com.umg.sgau.estudiante.dto.EstudianteUpdateRequestDTO;
 import com.umg.sgau.estudiante.entity.Estudiante;
 import com.umg.sgau.estudiante.exception.EstudianteNoEncontradoException;
 import com.umg.sgau.estudiante.mapper.EstudianteMapper;
@@ -25,16 +27,18 @@ public class EstudianteController {
 
     @PostMapping
     public ResponseEntity<?> crear(
-            @RequestBody Estudiante estudiante
+            @RequestBody EstudianteCreateRequestDTO request
     ) {
 
         Estudiante estudianteCreado =
-                estudianteService.crear(estudiante);
+                estudianteService.crear(
+                        EstudianteMapper.toEntity(request)
+                );
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(
-                        EstudianteMapper.aResponseDTO(
+                        EstudianteMapper.toResponseDTO(
                                 estudianteCreado
                         )
                 );
@@ -51,7 +55,7 @@ public class EstudianteController {
                     estudianteService.obtenerPorId(id);
 
             return ResponseEntity.ok(
-                    EstudianteMapper.aResponseDTO(estudiante)
+                    EstudianteMapper.toResponseDTO(estudiante)
             );
 
         } catch (EstudianteNoEncontradoException ex) {
@@ -84,7 +88,7 @@ public class EstudianteController {
 
         return ResponseEntity.ok(
                 estudiantes.map(
-                        EstudianteMapper::aResponseDTO
+                        EstudianteMapper::toResponseDTO
                 )
         );
 
@@ -93,7 +97,7 @@ public class EstudianteController {
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(
             @PathVariable Long id,
-            @RequestBody Estudiante estudiante
+            @RequestBody EstudianteUpdateRequestDTO request
     ) {
 
         try {
@@ -101,11 +105,11 @@ public class EstudianteController {
             Estudiante estudianteActualizado =
                     estudianteService.actualizar(
                             id,
-                            estudiante
+                            EstudianteMapper.toEntity(request)
                     );
 
             return ResponseEntity.ok(
-                    EstudianteMapper.aResponseDTO(
+                    EstudianteMapper.toResponseDTO(
                             estudianteActualizado
                     )
             );
@@ -135,7 +139,7 @@ public class EstudianteController {
                     );
 
             return ResponseEntity.ok(
-                    EstudianteMapper.aResponseDTO(
+                    EstudianteMapper.toResponseDTO(
                             estudiante
                     )
             );
@@ -161,7 +165,7 @@ public class EstudianteController {
                     estudianteService.obtenerResumenPorId(id);
 
             return ResponseEntity.ok(
-                    EstudianteMapper.aSummaryDTO(
+                    EstudianteMapper.toSummaryDTO(
                             estudiante
                     )
             );
