@@ -1,6 +1,9 @@
 package com.umg.sgau.estudiante.mapper;
 
-import com.umg.sgau.estudiante.dto.*;
+import com.umg.sgau.estudiante.dto.EstudianteCreateRequestDTO;
+import com.umg.sgau.estudiante.dto.EstudianteResponseDTO;
+import com.umg.sgau.estudiante.dto.EstudianteSummaryDTO;
+import com.umg.sgau.estudiante.dto.EstudianteUpdateRequestDTO;
 import com.umg.sgau.estudiante.entity.Estudiante;
 
 import java.util.List;
@@ -12,6 +15,22 @@ public class EstudianteMapper {
     }
 
     public static Estudiante toEntity(EstudianteCreateRequestDTO dto) {
+
+        Estudiante estudiante = new Estudiante();
+
+        estudiante.setCodigoEstudiantil(dto.getCodigoEstudiantil());
+        estudiante.setNumeroIdentificacion(dto.getNumeroIdentificacion());
+        estudiante.setNombres(dto.getNombres());
+        estudiante.setApellidos(dto.getApellidos());
+        estudiante.setFechaNacimiento(dto.getFechaNacimiento());
+        estudiante.setCorreo(dto.getCorreo());
+        estudiante.setTelefono(dto.getTelefono());
+        estudiante.setDireccion(dto.getDireccion());
+
+        return estudiante;
+    }
+
+    public static Estudiante toEntity(EstudianteUpdateRequestDTO dto) {
 
         Estudiante estudiante = new Estudiante();
 
@@ -62,26 +81,6 @@ public class EstudianteMapper {
         return estudiantes.stream()
                 .map(EstudianteMapper::toResponseDTO)
                 .collect(Collectors.toList());
-    }
-
-    public static void updateEntity(
-            EstudianteUpdateRequestDTO dto,
-            Estudiante estudiante) {
-
-        estudiante.setCodigoEstudiantil(dto.getCodigoEstudiantil());
-        estudiante.setNumeroIdentificacion(dto.getNumeroIdentificacion());
-        estudiante.setNombres(dto.getNombres());
-        estudiante.setApellidos(dto.getApellidos());
-        estudiante.setFechaNacimiento(dto.getFechaNacimiento());
-        estudiante.setCorreo(dto.getCorreo());
-        estudiante.setTelefono(dto.getTelefono());
-        estudiante.setDireccion(dto.getDireccion());
-
-        // No se modifican:
-        // id
-        // activo
-        // fechaCreacion
-        // fechaActualizacion
     }
 
 }
