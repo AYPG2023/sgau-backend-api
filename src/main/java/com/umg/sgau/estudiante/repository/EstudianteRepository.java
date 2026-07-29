@@ -41,24 +41,24 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
     );
 
     @Query("""
-        SELECT e
-        FROM Estudiante e
-        WHERE
-            (
-                :texto IS NULL
-                OR TRIM(:texto) = ''
-                OR LOWER(e.codigoEstudiantil) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(e.numeroIdentificacion) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(e.nombres) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(e.apellidos) LIKE LOWER(CONCAT('%', :texto, '%'))
-                OR LOWER(e.correo) LIKE LOWER(CONCAT('%', :texto, '%'))
-            )
+    SELECT e
+    FROM Estudiante e
+    WHERE
+        (
+            :texto IS NULL
+            OR :texto = ''
+            OR LOWER(e.codigoEstudiantil) LIKE LOWER(CONCAT('%', :texto, '%'))
+            OR LOWER(e.numeroIdentificacion) LIKE LOWER(CONCAT('%', :texto, '%'))
+            OR LOWER(e.nombres) LIKE LOWER(CONCAT('%', :texto, '%'))
+            OR LOWER(e.apellidos) LIKE LOWER(CONCAT('%', :texto, '%'))
+            OR LOWER(e.correo) LIKE LOWER(CONCAT('%', :texto, '%'))
+        )
         AND
-            (
-                :activo IS NULL
-                OR e.activo = :activo
-            )
-        """)
+        (
+            :activo IS NULL
+            OR e.activo = :activo
+        )
+    """)
     Page<Estudiante> buscar(
             @Param("texto") String texto,
             @Param("activo") Boolean activo,

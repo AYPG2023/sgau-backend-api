@@ -64,15 +64,21 @@ public class EstudianteServiceImpl implements EstudianteService {
     public Page<Estudiante> listar(
             String texto,
             Boolean activo,
-            Pageable pageable
-    ) {
+            Pageable pageable) {
+
+        if (texto != null) {
+            texto = texto.trim();
+
+            if (texto.isBlank()) {
+                texto = null;
+            }
+        }
 
         return estudianteRepository.buscar(
                 texto,
                 activo,
                 pageable
         );
-
     }
 
     @Override
