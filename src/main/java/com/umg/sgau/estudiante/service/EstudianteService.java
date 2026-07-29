@@ -1,34 +1,32 @@
 package com.umg.sgau.estudiante.service;
 
-import com.umg.sgau.estudiante.dto.*;
+import com.umg.sgau.estudiante.entity.Estudiante;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
 public interface EstudianteService {
 
-    EstudianteResponseDTO crear(
-            EstudianteCreateRequestDTO request
-    );
+    Estudiante crear(Estudiante estudiante);
 
-    EstudianteResponseDTO obtenerPorId(Long id);
+    Estudiante obtenerPorId(Long id);
 
-    Page<EstudianteResponseDTO> listar(
+    Page<Estudiante> listar(
             String texto,
             Boolean activo,
             Pageable pageable
     );
 
-    EstudianteResponseDTO actualizar(
+    Estudiante actualizar(
             Long id,
-            EstudianteUpdateRequestDTO request
+            Estudiante estudiante
     );
 
-    EstudianteResponseDTO cambiarEstado(
+    Estudiante cambiarEstado(
             Long id,
-            EstudianteStatusRequestDTO request
+            Boolean activo
     );
 
-    EstudianteSummaryDTO obtenerResumenPorId(Long id);
+    Estudiante obtenerResumenPorId(Long id);
 
     Object obtenerHistorialAcademico(Long id);
 
