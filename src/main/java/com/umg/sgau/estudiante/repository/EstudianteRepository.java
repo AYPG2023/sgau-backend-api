@@ -20,4 +20,19 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
     boolean existsByNumeroIdentificacion(String numeroIdentificacion);
 
     boolean existsByCorreo(String correo);
+
+    boolean existsByCodigoEstudiantilAndIdNot(
+            String codigoEstudiantil,
+            Long id
+    );
+
+    boolean existsByNumeroIdentificacionAndIdNot(
+            String numeroIdentificacion,
+            Long id
+    );
+
+    boolean existsByCorreoAndIdNot(
+            String correo,
+            Long id
+    );
 }
