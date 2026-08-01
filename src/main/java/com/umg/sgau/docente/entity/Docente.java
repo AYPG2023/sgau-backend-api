@@ -1,5 +1,60 @@
 package com.umg.sgau.docente.entity;
 
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.Table;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Entity
+@Table(name = "docentes")
+@Getter
+@Setter
+@NoArgsConstructor
 public class Docente {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = "codigo_docente", nullable = false, unique = true, length = 20)
+    private String codigoDocente;
+
+    @Column(nullable = false, length = 60)
+    private String nombre;
+
+    @Column(nullable = false, length = 60)
+    private String apellido;
+
+    @Column(nullable = false, unique = true, length = 100)
+    private String email;
+
+    @Column(length = 20)
+    private String telefono;
+
+    @Column(length = 100)
+    private String especialidad;
+
+    @Column(nullable = false)
+    private Boolean activo;
+
+    @Column(name = "fecha_creacion", nullable = false, updatable = false)
+    private LocalDateTime fechaCreacion;
+
+    @PrePersist
+    protected void alPersistir() {
+        this.fechaCreacion = LocalDateTime.now();
+
+        if (this.activo == null) {
+            this.activo = true;
+        }
+    }
 }
