@@ -29,7 +29,6 @@ public final class CursoMapper {
                 .creditos(dto.getCreditos())
                 .horasSemanales(dto.getHorasSemanales())
                 .carreraId(dto.getCarreraId())
-                .docenteId(dto.getDocenteId())
                 .cicloAnio(dto.getCicloAnio())
                 .build();
     }
@@ -90,7 +89,6 @@ public final class CursoMapper {
         curso.setCreditos(dto.getCreditos());
         curso.setHorasSemanales(dto.getHorasSemanales());
         curso.setCarreraId(dto.getCarreraId());
-        curso.setDocenteId(dto.getDocenteId());
         curso.setCicloAnio(dto.getCicloAnio());
     }
 }

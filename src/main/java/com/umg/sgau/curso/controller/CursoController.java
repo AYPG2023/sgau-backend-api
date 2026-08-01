@@ -9,6 +9,8 @@ import com.umg.sgau.curso.dto.CursoUpdateRequestDTO;
 import com.umg.sgau.curso.entity.Curso;
 import com.umg.sgau.curso.mapper.CursoMapper;
 import com.umg.sgau.curso.service.CursoService;
+import com.umg.sgau.docente.dto.DocenteResponseDTO;
+import com.umg.sgau.docente.mapper.DocenteMapper;
 import jakarta.validation.Valid;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -86,15 +89,23 @@ public class CursoController {
     }
 
     @GetMapping("/docente/{docenteId}")
-    public ResponseEntity<List<CursoSummaryDTO>> obtenerCursosPorDocente(
+    public ResponseEntity<List<CursoResponseDTO>> obtenerCursosPorDocente(
             @PathVariable Long docenteId) {
         List<Curso> cursos = cursoService.obtenerCursosPorDocente(docenteId);
 
-        List<CursoSummaryDTO> respuesta = cursos.stream()
-                .map(CursoMapper::aSummaryDTO)
+        List<CursoResponseDTO> respuesta = cursos.stream()
+                .map(CursoMapper::aResponseDTO)
                 .collect(Collectors.toList());
 
         return ResponseEntity.ok(respuesta);
+    }
+
+    @GetMapping("/carrera/{carreraId}")
+    public ResponseEntity<Page<CursoResponseDTO>> obtenerCursosActivosPorCarrera(
+            @PathVariable Long carreraId,
+            Pageable pageable) {
+        Page<Curso> cursos = cursoService.obtenerCursosActivosPorCarrera(carreraId, pageable);
+        return ResponseEntity.ok(cursos.map(CursoMapper::aResponseDTO));
     }
 
     @GetMapping("/{id}")
@@ -133,5 +144,17 @@ public class CursoController {
         Curso actualizado = cursoService.asignarDocente(id, request.getDocenteId());
 
         return ResponseEntity.ok(CursoMapper.aResponseDTO(actualizado));
+    }
+
+    @DeleteMapping("/{id}/docente")
+    public ResponseEntity<CursoResponseDTO> retirarDocente(@PathVariable Long id) {
+        Curso actualizado = cursoService.retirarDocente(id);
+        return ResponseEntity.ok(CursoMapper.aResponseDTO(actualizado));
+    }
+
+    @GetMapping("/{id}/docente")
+    public ResponseEntity<DocenteResponseDTO> obtenerDocenteAsignado(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                DocenteMapper.aResponseDTO(cursoService.obtenerDocenteAsignado(id)));
     }
 }

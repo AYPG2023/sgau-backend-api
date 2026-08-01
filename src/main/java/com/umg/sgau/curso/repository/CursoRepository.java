@@ -1,6 +1,7 @@
 package com.umg.sgau.curso.repository;
 
 import com.umg.sgau.curso.entity.Curso;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,6 +22,8 @@ public interface CursoRepository extends JpaRepository<Curso, Long> {
     Page<Curso> findByCarreraId(Long carreraId, Pageable pageable);
 
     Page<Curso> findByDocenteId(Long docenteId, Pageable pageable);
+
+    List<Curso> findByDocenteId(Long docenteId);
 
     Page<Curso> findByCicloAnio(Integer cicloAnio, Pageable pageable);
 
