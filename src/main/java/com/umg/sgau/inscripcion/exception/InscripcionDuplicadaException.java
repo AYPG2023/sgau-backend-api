@@ -7,6 +7,12 @@ package com.umg.sgau.inscripcion.exception;
  */
 public class InscripcionDuplicadaException extends RuntimeException {
 
+    public InscripcionDuplicadaException(Long estudianteId, Long cursoId, Integer cicloAnio) {
+        super(String.format(
+                "Ya existe una inscripcion activa: estudiante=%d, curso=%d, ciclo=%d",
+                estudianteId, cursoId, cicloAnio));
+    }
+
     public InscripcionDuplicadaException(
             Long estudianteId, Long carreraId, String grado,
             String seccion, Integer cicloAnio) {

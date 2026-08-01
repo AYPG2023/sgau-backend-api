@@ -72,6 +72,8 @@ public interface InscripcionService {
      */
     Inscripcion anular(Long id, String motivo);
 
+    Inscripcion reactivar(Long id);
+
     /**
      * Obtiene el historial completo de inscripciones de un estudiante,
      * ordenado por fecha de inscripcion descendente.
@@ -81,7 +83,15 @@ public interface InscripcionService {
      */
     Page<Inscripcion> historialPorEstudiante(Long estudianteId, Pageable pageable);
 
+    Page<Inscripcion> inscripcionesPorCurso(Long cursoId, Pageable pageable);
+
+    Page<Inscripcion> inscripcionesActivasPorEstudiante(Long estudianteId, Pageable pageable);
+
+    Page<Inscripcion> inscripcionesActivasPorCurso(Long cursoId, Pageable pageable);
+
     List<Inscripcion> obtenerActivas();
 
     List<Long> obtenerEstudiantesConInscripcionActiva();
+
+    boolean existeInscripcionActiva(Long estudianteId, Long cursoId, Integer cicloAnio);
 }
