@@ -10,7 +10,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,14 +51,8 @@ public class EstudianteServiceImpl implements EstudianteService {
     @Transactional(readOnly = true)
     public Estudiante obtenerPorId(Long id) {
 
-        Optional<Estudiante> estudianteEncontrado =
-                estudianteRepository.findById(id);
-
-        if (estudianteEncontrado.isEmpty()) {
-            throw new EstudianteNoEncontradoException(id);
-        }
-
-        return estudianteEncontrado.get();
+        return estudianteRepository.findById(id)
+                .orElseThrow(() -> new EstudianteNoEncontradoException(id));
     }
 
     @Override
@@ -86,14 +82,7 @@ public class EstudianteServiceImpl implements EstudianteService {
             Long id,
             Estudiante estudiante) {
 
-        Optional<Estudiante> estudianteExistente =
-                estudianteRepository.findById(id);
-
-        if (estudianteExistente.isEmpty()) {
-            throw new EstudianteNoEncontradoException(id);
-        }
-
-        Estudiante estudianteActual = estudianteExistente.get();
+        Estudiante estudianteActual = obtenerPorId(id);
 
         if (estudianteRepository.existsByCodigoEstudiantilAndIdNot(
                 estudiante.getCodigoEstudiantil(), id)) {
@@ -145,18 +134,30 @@ public class EstudianteServiceImpl implements EstudianteService {
             Long id,
             Boolean activo) {
 
-        Optional<Estudiante> estudianteExistente =
-                estudianteRepository.findById(id);
-
-        if (estudianteExistente.isEmpty()) {
-            throw new EstudianteNoEncontradoException(id);
-        }
-
-        Estudiante estudiante = estudianteExistente.get();
+        Estudiante estudiante = obtenerPorId(id);
 
         estudiante.setActivo(activo);
 
         return estudianteRepository.save(estudiante);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Estudiante> obtenerActivos() {
+        return estudianteRepository.findAll()
+                .stream()
+                .filter(estudiante -> Boolean.TRUE.equals(estudiante.getActivo()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> obtenerCorreosActivos() {
+        return estudianteRepository.findAll()
+                .stream()
+                .filter(estudiante -> Boolean.TRUE.equals(estudiante.getActivo()))
+                .map(Estudiante::getCorreo)
+                .collect(Collectors.toList());
     }
 
     @Override

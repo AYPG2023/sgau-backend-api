@@ -121,7 +121,7 @@ public class CarreraServiceImpl implements CarreraService {
 
     private String normalizarTextoOpcional(String texto) {
         if (texto == null) {
-            return null;
+            return "";
         }
 
         return texto.trim();

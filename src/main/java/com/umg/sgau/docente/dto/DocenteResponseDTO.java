@@ -1,14 +1,17 @@
 package com.umg.sgau.docente.dto;
 
 import java.time.LocalDateTime;
-// ESTO EQUIVALE A ESTO public DocenteResponseDTO() 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @Setter
 @NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class DocenteResponseDTO {
 
     private Long id;
@@ -20,4 +23,5 @@ public class DocenteResponseDTO {
     private String especialidad;
     private Boolean activo;
     private LocalDateTime fechaCreacion;
+    private LocalDateTime fechaActualizacion;
 }

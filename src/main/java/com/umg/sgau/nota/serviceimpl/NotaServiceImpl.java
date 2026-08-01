@@ -1,6 +1,9 @@
 package com.umg.sgau.nota.serviceimpl;
 
 import com.umg.sgau.nota.entity.Nota;
+import com.umg.sgau.nota.exception.NotaDuplicadaException;
+import com.umg.sgau.nota.exception.NotaInvalidaException;
+import com.umg.sgau.nota.exception.NotaNoEncontradaException;
 import com.umg.sgau.nota.repository.NotaRepository;
 import com.umg.sgau.nota.service.NotaService;
 import org.springframework.data.domain.Page;
@@ -27,27 +30,30 @@ public class NotaServiceImpl implements NotaService {
 
         // 1. Validar identificadores positivos
         if (nota.getEstudianteId() == null || nota.getEstudianteId() <= 0) {
-            throw new IllegalArgumentException("El identificador del estudiante debe ser positivo.");
+            throw new NotaInvalidaException("El identificador del estudiante debe ser positivo.");
         }
         if (nota.getCursoId() == null || nota.getCursoId() <= 0) {
-            throw new IllegalArgumentException("El identificador del curso debe ser positivo.");
+            throw new NotaInvalidaException("El identificador del curso debe ser positivo.");
         }
 
         // 2. Validar calificacion entre 0 y 100
         if (nota.getCalificacion() == null
                 || nota.getCalificacion().compareTo(BigDecimal.ZERO) < 0
                 || nota.getCalificacion().compareTo(new BigDecimal("100")) > 0) {
-            throw new IllegalArgumentException("La calificacion debe estar entre 0 y 100.");
+            throw new NotaInvalidaException("La calificacion debe estar entre 0 y 100.");
         }
 
         // 3. Normalizar tipoEvaluacion en mayusculas
+        if (nota.getTipoEvaluacion() == null || nota.getTipoEvaluacion().isBlank()) {
+            throw new NotaInvalidaException("El tipo de evaluacion es obligatorio.");
+        }
         nota.setTipoEvaluacion(nota.getTipoEvaluacion().trim().toUpperCase(Locale.ROOT));
 
         // 4. Evitar notas activas duplicadas
         if (notaRepository.existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrue(
                 nota.getEstudianteId(), nota.getCursoId(), nota.getCicloAnio(),
                 nota.getTipoEvaluacion())) {
-            throw new IllegalArgumentException(
+            throw new NotaDuplicadaException(
                     "Ya existe una nota activa para el mismo estudiante, curso, ciclo y tipo de evaluacion.");
         }
 
@@ -60,7 +66,7 @@ public class NotaServiceImpl implements NotaService {
     @Override
     public Nota obtenerPorId(Long id) {
         return notaRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("No se encontro la nota con ID: " + id));
+                .orElseThrow(() -> new NotaNoEncontradaException(id));
     }
 
     @Override
@@ -81,17 +87,20 @@ public class NotaServiceImpl implements NotaService {
         if (nota.getCalificacion() == null
                 || nota.getCalificacion().compareTo(BigDecimal.ZERO) < 0
                 || nota.getCalificacion().compareTo(new BigDecimal("100")) > 0) {
-            throw new IllegalArgumentException("La calificacion debe estar entre 0 y 100.");
+            throw new NotaInvalidaException("La calificacion debe estar entre 0 y 100.");
         }
 
         // 3. Normalizar tipoEvaluacion
+        if (nota.getTipoEvaluacion() == null || nota.getTipoEvaluacion().isBlank()) {
+            throw new NotaInvalidaException("El tipo de evaluacion es obligatorio.");
+        }
         String tipoNormalizado = nota.getTipoEvaluacion().trim().toUpperCase(Locale.ROOT);
 
         // 4. Validar duplicados excluyendo el mismo ID
         if (notaRepository.existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrueAndIdNot(
                 existente.getEstudianteId(), existente.getCursoId(), existente.getCicloAnio(),
                 tipoNormalizado, id)) {
-            throw new IllegalArgumentException(
+            throw new NotaDuplicadaException(
                     "Ya existe una nota activa para el mismo estudiante, curso, ciclo y tipo de evaluacion.");
         }
 

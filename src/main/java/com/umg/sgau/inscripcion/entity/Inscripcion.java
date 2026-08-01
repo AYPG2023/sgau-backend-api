@@ -12,7 +12,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -27,16 +26,16 @@ import java.time.LocalDateTime;
 public class Inscripcion {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private long id;
+    private Long id;
 
     @Column(name= "estudiante_id", nullable = false)
-    private long estudianteId;
+    private Long estudianteId;
 
     @Column(name = "carrera_id", nullable = false)
-    private long carreraId;
+    private Long carreraId;
 
     @Column(name = "curso_id")
-    private long cursoId;
+    private Long cursoId;
 
     @Column(nullable = false, length = 50)
     private String grado;
@@ -45,7 +44,7 @@ public class Inscripcion {
     private String seccion;
 
     @Column(name = "ciclo_anio", nullable = false)
-    private int cicloAnio;
+    private Integer cicloAnio;
 
     @Column(name = "fecha_inscripcion", nullable = false)
     private LocalDate fechaInscripcion;

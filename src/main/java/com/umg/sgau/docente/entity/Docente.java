@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 
 import lombok.Getter;
@@ -49,12 +50,21 @@ public class Docente {
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
+    @Column(name = "fecha_actualizacion", nullable = false)
+    private LocalDateTime fechaActualizacion;
+
     @PrePersist
     protected void alPersistir() {
         this.fechaCreacion = LocalDateTime.now();
+        this.fechaActualizacion = LocalDateTime.now();
 
         if (this.activo == null) {
             this.activo = true;
         }
+    }
+
+    @PreUpdate
+    protected void alActualizar() {
+        this.fechaActualizacion = LocalDateTime.now();
     }
 }

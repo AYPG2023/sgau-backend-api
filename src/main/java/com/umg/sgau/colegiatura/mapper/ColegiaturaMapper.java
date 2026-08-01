@@ -6,7 +6,7 @@ import com.umg.sgau.colegiatura.entity.Colegiatura;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class ColegiaturaMapper {
+public final class ColegiaturaMapper {
 
     private ColegiaturaMapper() {
     }

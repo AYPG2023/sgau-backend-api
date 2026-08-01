@@ -3,16 +3,17 @@ package com.umg.sgau.docente.mapper;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.umg.sgau.docente.dto.DocenteRequestDTO;
+import com.umg.sgau.docente.dto.DocenteCreateRequestDTO;
 import com.umg.sgau.docente.dto.DocenteResponseDTO;
+import com.umg.sgau.docente.dto.DocenteUpdateRequestDTO;
 import com.umg.sgau.docente.entity.Docente;
 
-public class DocenteMapper {
+public final class DocenteMapper {
 
-    public DocenteMapper() {
+    private DocenteMapper() {
     }
 
-    public static Docente aEntidad(DocenteRequestDTO dto) {
+    public static Docente aEntidad(DocenteCreateRequestDTO dto) {
 
         Docente docente = new Docente();
 
@@ -22,29 +23,37 @@ public class DocenteMapper {
         docente.setEmail(dto.getEmail());
         docente.setTelefono(dto.getTelefono());
         docente.setEspecialidad(dto.getEspecialidad());
-        docente.setActivo(dto.getActivo());
 
         return docente;
     }
-        public static DocenteResponseDTO aResponseDTO(Docente docente) {
 
-            DocenteResponseDTO dto = new DocenteResponseDTO();
-
-            dto.setId(docente.getId());
-            dto.setCodigoDocente(docente.getCodigoDocente());
-            dto.setNombre(docente.getNombre());
-            dto.setApellido(docente.getApellido());
-            dto.setEmail(docente.getEmail());
-            dto.setTelefono(docente.getTelefono());
-            dto.setEspecialidad(docente.getEspecialidad());
-            dto.setActivo(docente.getActivo());
-            dto.setFechaCreacion(docente.getFechaCreacion());
-
-            return dto;
-        }
-        public static List<DocenteResponseDTO> aResponseDTOList(List<Docente> docentes) {
-            return docentes.stream()
-                    .map(DocenteMapper::aResponseDTO)
-                    .collect(Collectors.toList());
-        }
+    public static void actualizarEntidad(DocenteUpdateRequestDTO dto, Docente docente) {
+        docente.setCodigoDocente(dto.getCodigoDocente());
+        docente.setNombre(dto.getNombre());
+        docente.setApellido(dto.getApellido());
+        docente.setEmail(dto.getEmail());
+        docente.setTelefono(dto.getTelefono());
+        docente.setEspecialidad(dto.getEspecialidad());
     }
+
+    public static DocenteResponseDTO aResponseDTO(Docente docente) {
+        return DocenteResponseDTO.builder()
+                .id(docente.getId())
+                .codigoDocente(docente.getCodigoDocente())
+                .nombre(docente.getNombre())
+                .apellido(docente.getApellido())
+                .email(docente.getEmail())
+                .telefono(docente.getTelefono())
+                .especialidad(docente.getEspecialidad())
+                .activo(docente.getActivo())
+                .fechaCreacion(docente.getFechaCreacion())
+                .fechaActualizacion(docente.getFechaActualizacion())
+                .build();
+    }
+
+    public static List<DocenteResponseDTO> aResponseDTOList(List<Docente> docentes) {
+        return docentes.stream()
+                .map(DocenteMapper::aResponseDTO)
+                .collect(Collectors.toList());
+    }
+}

@@ -1,8 +1,10 @@
 package com.umg.sgau.docente.serviceimpl;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import com.umg.sgau.docente.entity.Docente;
@@ -39,39 +41,59 @@ public class DocenteServiceImpl implements DocenteService {
 			);
 		}
 		
-		// TODO Auto-generated method stub
+		docente.setActivo(true);
 		return docenteRepository.save(docente);
 	}
 
 	@Override
 	public Docente obtenerPorId(Long id) {
-		Optional<Docente> docenteEncontrado = docenteRepository.findById(id);
-		
-		if (docenteEncontrado.isEmpty()) {
-			throw new DocenteNoEncontradoException(id);
-		}
-		
-		return docenteEncontrado.get();
+		return docenteRepository.findById(id)
+				.orElseThrow(() -> new DocenteNoEncontradoException(id));
 	}
 
 	@Override
 	public List<Docente> obtenerTodos() {
-		// TODO Auto-generated method stub
 		return docenteRepository.findAll();
 	}
+
+	@Override
+	public Page<Docente> listar(String busqueda, Boolean activo, Pageable pageable) {
+		return docenteRepository.buscarConFiltros(normalizarBusqueda(busqueda), activo, pageable);
+	}
+
+	@Override
+	public List<Docente> obtenerActivos() {
+		return docenteRepository.findAll()
+				.stream()
+				.filter(docente -> Boolean.TRUE.equals(docente.getActivo()))
+				.collect(Collectors.toList());
+	}
+
+	@Override
+	public List<String> obtenerCorreosActivos() {
+		return docenteRepository.findAll()
+				.stream()
+				.filter(docente -> Boolean.TRUE.equals(docente.getActivo()))
+				.map(Docente::getEmail)
+				.collect(Collectors.toList());
+	}
 	
-	// necesita hacer dos cosas , tenemos que validar que exista ante de intentar actualizar
 	@Override
 	public Docente actualizar(Long id, Docente docente) {
 		
-		Optional<Docente> docenteExistente = docenteRepository.findById(id);
-		
-		if (docenteExistente.isEmpty()) {
-			// si esta vacio este throw, sale del metodo termina la ejecucion y regresa la exception
-			throw new DocenteNoEncontradoException(id);
+		Docente docenteActual = obtenerPorId(id);
+
+		if (docenteRepository.existsByCodigoDocenteAndIdNot(docente.getCodigoDocente(), id)) {
+			throw new DocenteDuplicadoException(
+					"Ya existe un docente con el codigo: " + docente.getCodigoDocente()
+			);
 		}
-		
-		Docente docenteActual = docenteExistente.get();
+
+		if (docenteRepository.existsByEmailAndIdNot(docente.getEmail(), id)) {
+			throw new DocenteDuplicadoException(
+					"Ya existe un docente con el email: " + docente.getEmail()
+			);
+		}
 			
 		docenteActual.setCodigoDocente(docente.getCodigoDocente());
 		docenteActual.setEmail(docente.getEmail());
@@ -79,23 +101,26 @@ public class DocenteServiceImpl implements DocenteService {
 		docenteActual.setApellido(docente.getApellido());
 		docenteActual.setTelefono(docente.getTelefono());
 		docenteActual.setEspecialidad(docente.getEspecialidad());
-		docenteActual.setActivo(docente.getActivo());
 
-		//no se usa update solo save
 		return docenteRepository.save(docenteActual);
 	}
+
+	@Override
+	public Docente cambiarEstado(Long id, Boolean activo) {
+		Docente docente = obtenerPorId(id);
+		docente.setActivo(activo);
+		return docenteRepository.save(docente);
+	}
 		
-	//softdelete no elimina solo inactiva 
 	@Override
 	public void eliminar(Long id) {
-		
-		Optional<Docente> docenteExistente = docenteRepository.findById(id);
-		
-		if (docenteExistente.isEmpty()) {
-			// si esta vacio este throw, sale del metodo termina la ejecucion y regresa la exception
-			throw new DocenteNoEncontradoException(id);
+		cambiarEstado(id, false);
+	}
+
+	private String normalizarBusqueda(String busqueda) {
+		if (busqueda == null || busqueda.isBlank()) {
+			return "";
 		}
-		
-		docenteRepository.deleteById(id);
+		return busqueda.trim();
 	}
 }

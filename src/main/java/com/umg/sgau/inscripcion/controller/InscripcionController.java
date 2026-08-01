@@ -4,6 +4,8 @@ import com.umg.sgau.inscripcion.dto.InscripcionCreateRequestDTO;
 import com.umg.sgau.inscripcion.dto.InscripcionResponseDTO;
 import com.umg.sgau.inscripcion.dto.InscripcionStatusRequestDTO;
 import com.umg.sgau.inscripcion.dto.InscripcionUpdateRequestDTO;
+import com.umg.sgau.inscripcion.entity.Inscripcion;
+import com.umg.sgau.inscripcion.mapper.InscripcionMapper;
 import com.umg.sgau.inscripcion.service.InscripcionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * Controlador REST del dominio Inscripcion.
@@ -46,8 +50,10 @@ public class InscripcionController {
     @PostMapping
     public ResponseEntity<InscripcionResponseDTO> registrar(
             @Valid @RequestBody InscripcionCreateRequestDTO request) {
-        InscripcionResponseDTO respuesta = inscripcionService.registrar(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(respuesta);
+        Inscripcion inscripcion = InscripcionMapper.aEntidad(request);
+        Inscripcion registrada = inscripcionService.registrar(inscripcion);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(InscripcionMapper.aResponseDTO(registrada));
     }
 
     /**
@@ -66,10 +72,10 @@ public class InscripcionController {
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) Boolean activo,
             Pageable pageable) {
-        return ResponseEntity.ok(
-                inscripcionService.listarConFiltros(
-                        estudianteId, carreraId, cursoId, cicloAnio,
-                        grado, seccion, estado, activo, pageable));
+        Page<Inscripcion> inscripciones = inscripcionService.listarConFiltros(
+                estudianteId, carreraId, cursoId, cicloAnio,
+                grado, seccion, estado, activo, pageable);
+        return ResponseEntity.ok(inscripciones.map(InscripcionMapper::aResponseDTO));
     }
 
     /**
@@ -79,7 +85,8 @@ public class InscripcionController {
     @GetMapping("/{id}")
     public ResponseEntity<InscripcionResponseDTO> obtenerPorId(
             @PathVariable Long id) {
-        return ResponseEntity.ok(inscripcionService.obtenerPorId(id));
+        return ResponseEntity.ok(
+                InscripcionMapper.aResponseDTO(inscripcionService.obtenerPorId(id)));
     }
 
     /**
@@ -91,7 +98,10 @@ public class InscripcionController {
     public ResponseEntity<InscripcionResponseDTO> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody InscripcionUpdateRequestDTO request) {
-        return ResponseEntity.ok(inscripcionService.actualizar(id, request));
+        Inscripcion datos = new Inscripcion();
+        InscripcionMapper.actualizarEntidad(request, datos);
+        return ResponseEntity.ok(
+                InscripcionMapper.aResponseDTO(inscripcionService.actualizar(id, datos)));
     }
 
     /**
@@ -102,7 +112,8 @@ public class InscripcionController {
     public ResponseEntity<InscripcionResponseDTO> anular(
             @PathVariable Long id,
             @Valid @RequestBody InscripcionStatusRequestDTO request) {
-        return ResponseEntity.ok(inscripcionService.anular(id, request));
+        return ResponseEntity.ok(
+                InscripcionMapper.aResponseDTO(inscripcionService.anular(id, request.getMotivo())));
     }
 
     /**
@@ -114,6 +125,18 @@ public class InscripcionController {
             @PathVariable Long estudianteId,
             Pageable pageable) {
         return ResponseEntity.ok(
-                inscripcionService.historialPorEstudiante(estudianteId, pageable));
+                inscripcionService.historialPorEstudiante(estudianteId, pageable)
+                        .map(InscripcionMapper::aResponseDTO));
+    }
+
+    @GetMapping("/activas")
+    public ResponseEntity<List<InscripcionResponseDTO>> obtenerActivas() {
+        return ResponseEntity.ok(
+                InscripcionMapper.aResponseDTOList(inscripcionService.obtenerActivas()));
+    }
+
+    @GetMapping("/activas/estudiantes")
+    public ResponseEntity<List<Long>> obtenerEstudiantesConInscripcionActiva() {
+        return ResponseEntity.ok(inscripcionService.obtenerEstudiantesConInscripcionActiva());
     }
 }

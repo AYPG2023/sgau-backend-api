@@ -9,7 +9,7 @@ import com.umg.sgau.estudiante.entity.Estudiante;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class EstudianteMapper {
+public final class EstudianteMapper {
 
     private EstudianteMapper() {
     }

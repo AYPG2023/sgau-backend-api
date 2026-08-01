@@ -19,7 +19,7 @@ public final class CursoMapper {
 
     public static Curso aEntidad(CursoCreateRequestDTO dto) {
         if (dto == null) {
-            return null;
+            throw new IllegalArgumentException("El DTO de creacion de curso es obligatorio");
         }
 
         return Curso.builder()
@@ -36,7 +36,7 @@ public final class CursoMapper {
 
     public static CursoResponseDTO aResponseDTO(Curso curso) {
         if (curso == null) {
-            return null;
+            throw new IllegalArgumentException("La entidad curso es obligatoria");
         }
 
         return CursoResponseDTO.builder()
@@ -57,7 +57,7 @@ public final class CursoMapper {
 
     public static CursoSummaryDTO aSummaryDTO(Curso curso) {
         if (curso == null) {
-            return null;
+            throw new IllegalArgumentException("La entidad curso es obligatoria");
         }
 
         return CursoSummaryDTO.builder()

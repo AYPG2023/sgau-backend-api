@@ -1,6 +1,7 @@
 package com.umg.sgau.estudiante.controller;
 
 import com.umg.sgau.estudiante.dto.EstudianteCreateRequestDTO;
+import com.umg.sgau.estudiante.dto.EstudianteStatusRequestDTO;
 import com.umg.sgau.estudiante.dto.EstudianteUpdateRequestDTO;
 import com.umg.sgau.estudiante.entity.Estudiante;
 import com.umg.sgau.estudiante.exception.EstudianteNoEncontradoException;
@@ -12,6 +13,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/estudiantes")
@@ -27,7 +30,7 @@ public class EstudianteController {
 
     @PostMapping
     public ResponseEntity<?> crear(
-            @RequestBody EstudianteCreateRequestDTO request
+            @Valid @RequestBody EstudianteCreateRequestDTO request
     ) {
 
         Estudiante estudianteCreado =
@@ -97,7 +100,7 @@ public class EstudianteController {
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizar(
             @PathVariable Long id,
-            @RequestBody EstudianteUpdateRequestDTO request
+            @Valid @RequestBody EstudianteUpdateRequestDTO request
     ) {
 
         try {
@@ -127,7 +130,7 @@ public class EstudianteController {
     @PatchMapping("/{id}/estado")
     public ResponseEntity<?> cambiarEstado(
             @PathVariable Long id,
-            @RequestParam Boolean activo
+            @Valid @RequestBody EstudianteStatusRequestDTO request
     ) {
 
         try {
@@ -135,7 +138,7 @@ public class EstudianteController {
             Estudiante estudiante =
                     estudianteService.cambiarEstado(
                             id,
-                            activo
+                            request.getActivo()
                     );
 
             return ResponseEntity.ok(
@@ -199,6 +202,20 @@ public class EstudianteController {
 
         }
 
+    }
+
+    @GetMapping("/activos")
+    public ResponseEntity<?> obtenerActivos() {
+        return ResponseEntity.ok(
+                EstudianteMapper.toResponseDTOList(
+                        estudianteService.obtenerActivos()
+                )
+        );
+    }
+
+    @GetMapping("/activos/correos")
+    public ResponseEntity<?> obtenerCorreosActivos() {
+        return ResponseEntity.ok(estudianteService.obtenerCorreosActivos());
     }
 
 }

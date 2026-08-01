@@ -1,15 +1,12 @@
 package com.umg.sgau.inscripcion.serviceimpl;
 
-import com.umg.sgau.inscripcion.dto.InscripcionCreateRequestDTO;
-import com.umg.sgau.inscripcion.dto.InscripcionResponseDTO;
-import com.umg.sgau.inscripcion.dto.InscripcionStatusRequestDTO;
-import com.umg.sgau.inscripcion.dto.InscripcionUpdateRequestDTO;
 import com.umg.sgau.inscripcion.entity.Inscripcion;
 import com.umg.sgau.inscripcion.exception.InscripcionDuplicadaException;
 import com.umg.sgau.inscripcion.exception.InscripcionNoEncontradaException;
-import com.umg.sgau.inscripcion.mapper.InscripcionMapper;
 import com.umg.sgau.inscripcion.repository.InscripcionRepository;
 import com.umg.sgau.inscripcion.service.InscripcionService;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -24,79 +21,70 @@ public class InscripcionServiceImpl implements InscripcionService {
     private final InscripcionRepository inscripcionRepository;
 
     @Override
-    public InscripcionResponseDTO registrar(InscripcionCreateRequestDTO dto) {
+    public Inscripcion registrar(Inscripcion inscripcion) {
 
         // 1. Validar que no exista una inscripcion activa identica
         if (inscripcionRepository.existsByEstudianteIdAndCarreraIdAndGradoAndSeccionAndCicloAnioAndActivoTrue(
-                dto.getEstudianteId(), dto.getCarreraId(), dto.getGrado(),
-                dto.getSeccion(), dto.getCicloAnio())) {
+                inscripcion.getEstudianteId(), inscripcion.getCarreraId(), inscripcion.getGrado(),
+                inscripcion.getSeccion(), inscripcion.getCicloAnio())) {
             throw new InscripcionDuplicadaException(
-                    dto.getEstudianteId(), dto.getCarreraId(), dto.getGrado(),
-                    dto.getSeccion(), dto.getCicloAnio());
+                    inscripcion.getEstudianteId(), inscripcion.getCarreraId(), inscripcion.getGrado(),
+                    inscripcion.getSeccion(), inscripcion.getCicloAnio());
         }
 
-        // 2. Convertir DTO a entidad
-        Inscripcion inscripcion = InscripcionMapper.aEntidad(dto);
-
-        // 3. Guardar (el @PrePersist pone estado=ACTIVA y activo=true)
-        Inscripcion guardada = inscripcionRepository.save(inscripcion);
-
-        // 4. Convertir a DTO de respuesta
-        return InscripcionMapper.aResponseDTO(guardada);
+        // El @PrePersist pone estado=ACTIVA y activo=true.
+        return inscripcionRepository.save(inscripcion);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public InscripcionResponseDTO obtenerPorId(Long id) {
-        Inscripcion inscripcion = inscripcionRepository.findById(id)
+    public Inscripcion obtenerPorId(Long id) {
+        return inscripcionRepository.findById(id)
                 .orElseThrow(() -> new InscripcionNoEncontradaException(id));
-        return InscripcionMapper.aResponseDTO(inscripcion);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<InscripcionResponseDTO> listarConFiltros(
+    public Page<Inscripcion> listarConFiltros(
             Long estudianteId, Long carreraId, Long cursoId,
             Integer cicloAnio, String grado, String seccion,
             String estado, Boolean activo, Pageable pageable) {
 
         return inscripcionRepository.buscarConFiltros(
                         estudianteId, carreraId, cursoId, cicloAnio,
-                        grado, seccion, estado, activo, pageable)
-                .map(InscripcionMapper::aResponseDTO);
+                        grado, seccion, estado, activo, pageable);
     }
 
     @Override
-    public InscripcionResponseDTO actualizar(Long id, InscripcionUpdateRequestDTO dto) {
+    public Inscripcion actualizar(Long id, Inscripcion inscripcion) {
 
         // 1. Buscar la inscripcion existente
-        Inscripcion existente = inscripcionRepository.findById(id)
-                .orElseThrow(() -> new InscripcionNoEncontradaException(id));
+        Inscripcion existente = obtenerPorId(id);
 
         // 2. Validar que los nuevos datos no generen un duplicado
         //    (excluyendo el ID actual para no compararse con sigo mismo)
         if (inscripcionRepository.existsByEstudianteIdAndCarreraIdAndGradoAndSeccionAndCicloAnioAndActivoTrueAndIdNot(
-                existente.getEstudianteId(), dto.getCarreraId(), dto.getGrado(),
-                dto.getSeccion(), dto.getCicloAnio(), id)) {
+                existente.getEstudianteId(), inscripcion.getCarreraId(), inscripcion.getGrado(),
+                inscripcion.getSeccion(), inscripcion.getCicloAnio(), id)) {
             throw new InscripcionDuplicadaException(
-                    existente.getEstudianteId(), dto.getCarreraId(), dto.getGrado(),
-                    dto.getSeccion(), dto.getCicloAnio());
+                    existente.getEstudianteId(), inscripcion.getCarreraId(), inscripcion.getGrado(),
+                    inscripcion.getSeccion(), inscripcion.getCicloAnio());
         }
 
-        // 3. Modificar solo los campos editables (el mapper respeta la regla:
-        //    nunca toca id, estudianteId, estado, activo, fechaInscripcion, auditoria)
-        InscripcionMapper.actualizarEntidad(dto, existente);
+        existente.setCarreraId(inscripcion.getCarreraId());
+        existente.setCursoId(inscripcion.getCursoId());
+        existente.setGrado(inscripcion.getGrado());
+        existente.setSeccion(inscripcion.getSeccion());
+        existente.setCicloAnio(inscripcion.getCicloAnio());
+        existente.setObservaciones(inscripcion.getObservaciones());
 
-        // 4. Guardar
-        Inscripcion actualizada = inscripcionRepository.save(existente);
-        return InscripcionMapper.aResponseDTO(actualizada);
+        return inscripcionRepository.save(existente);
     }
 
     @Override
-    public InscripcionResponseDTO anular(Long id, InscripcionStatusRequestDTO dto) {
+    public Inscripcion anular(Long id, String motivo) {
 
-        Inscripcion inscripcion = inscripcionRepository.findById(id)
-                .orElseThrow(() -> new InscripcionNoEncontradaException(id));
+        Inscripcion inscripcion = obtenerPorId(id);
 
         // Regla de negocio: no se puede anular una inscripcion que ya esta anulada
         if ("ANULADA".equals(inscripcion.getEstado())) {
@@ -107,17 +95,35 @@ public class InscripcionServiceImpl implements InscripcionService {
         // Soft-delete: cambiar estado a ANULADA, activo a false
         inscripcion.setEstado("ANULADA");
         inscripcion.setActivo(false);
-        if (dto.getMotivo() != null && !dto.getMotivo().isBlank()) {
-            inscripcion.setObservaciones(dto.getMotivo());
+        if (motivo != null && !motivo.isBlank()) {
+            inscripcion.setObservaciones(motivo);
         }
 
-        return InscripcionMapper.aResponseDTO(inscripcionRepository.save(inscripcion));
+        return inscripcionRepository.save(inscripcion);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<InscripcionResponseDTO> historialPorEstudiante(Long estudianteId, Pageable pageable) {
-        return inscripcionRepository.findByEstudianteId(estudianteId, pageable)
-                .map(InscripcionMapper::aResponseDTO);
+    public Page<Inscripcion> historialPorEstudiante(Long estudianteId, Pageable pageable) {
+        return inscripcionRepository.findByEstudianteId(estudianteId, pageable);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Inscripcion> obtenerActivas() {
+        return inscripcionRepository.findAll()
+                .stream()
+                .filter(inscripcion -> Boolean.TRUE.equals(inscripcion.getActivo()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> obtenerEstudiantesConInscripcionActiva() {
+        return inscripcionRepository.findAll()
+                .stream()
+                .filter(inscripcion -> Boolean.TRUE.equals(inscripcion.getActivo()))
+                .map(Inscripcion::getEstudianteId)
+                .collect(Collectors.toList());
     }
 }

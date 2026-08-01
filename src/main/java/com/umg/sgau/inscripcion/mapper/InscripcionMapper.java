@@ -17,9 +17,7 @@ public final class InscripcionMapper {
         Inscripcion inscripcion = new Inscripcion();
         inscripcion.setEstudianteId(dto.getEstudianteId());
         inscripcion.setCarreraId(dto.getCarreraId());
-        if (dto.getCursoId() != null) {
-            inscripcion.setCursoId(dto.getCursoId());
-        }
+        inscripcion.setCursoId(dto.getCursoId());
         inscripcion.setGrado(dto.getGrado());
         inscripcion.setSeccion(dto.getSeccion());
         inscripcion.setCicloAnio(dto.getCicloAnio());
@@ -56,9 +54,7 @@ public final class InscripcionMapper {
     // Nunca toca: id, estudianteId, estado, activo, fechaInscripcion ni auditoria.
     public static void actualizarEntidad(InscripcionUpdateRequestDTO dto, Inscripcion inscripcion) {
         inscripcion.setCarreraId(dto.getCarreraId());
-        if (dto.getCursoId() != null) {
-            inscripcion.setCursoId(dto.getCursoId());
-        }
+        inscripcion.setCursoId(dto.getCursoId());
         inscripcion.setGrado(dto.getGrado());
         inscripcion.setSeccion(dto.getSeccion());
         inscripcion.setCicloAnio(dto.getCicloAnio());

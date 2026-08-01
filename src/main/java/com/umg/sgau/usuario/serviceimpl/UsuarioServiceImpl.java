@@ -1,10 +1,10 @@
 package com.umg.sgau.usuario.serviceimpl;
 
-import com.umg.sgau.exception.UsuarioNoEncontradoException;
 import com.umg.sgau.usuario.entity.Usuario;
+import com.umg.sgau.usuario.exception.UsuarioNoEncontradoException;
 import com.umg.sgau.usuario.repository.UsuarioRepository;
 import com.umg.sgau.usuario.service.UsuarioService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,11 +14,11 @@ import java.util.Optional;
 public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-    private final BCryptPasswordEncoder passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
 
     // Inyección por constructor
     public UsuarioServiceImpl(UsuarioRepository usuarioRepository,
-                              BCryptPasswordEncoder passwordEncoder) {
+                              PasswordEncoder passwordEncoder) {
         this.usuarioRepository = usuarioRepository;
         this.passwordEncoder = passwordEncoder;
     }
@@ -55,7 +55,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuarioActual.setEmail(usuario.getEmail());
         usuarioActual.setNombre(usuario.getNombre());
         usuarioActual.setApellido(usuario.getApellido());
-        usuarioActual.setActivo(usuario.getActivo());
 
         // Si viene un nuevo password en el update, cifrarlo
         if (usuario.getPassword() != null && !usuario.getPassword().isBlank()) {
@@ -71,6 +70,8 @@ public class UsuarioServiceImpl implements UsuarioService {
         if (usuarioExistente.isEmpty()) {
             throw new UsuarioNoEncontradoException(id);
         }
-        usuarioRepository.deleteById(id);
+        Usuario usuario = usuarioExistente.get();
+        usuario.setActivo(false);
+        usuarioRepository.save(usuario);
     }
 }

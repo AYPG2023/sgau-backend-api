@@ -19,7 +19,7 @@ public final class CarreraMapper {
 
     public static Carrera aEntidad(CarreraCreateRequestDTO dto) {
         if (dto == null) {
-            return null;
+            throw new IllegalArgumentException("El DTO de creacion de carrera es obligatorio");
         }
 
         return Carrera.builder()
@@ -32,7 +32,7 @@ public final class CarreraMapper {
 
     public static CarreraResponseDTO aResponseDTO(Carrera carrera) {
         if (carrera == null) {
-            return null;
+            throw new IllegalArgumentException("La entidad carrera es obligatoria");
         }
 
         return CarreraResponseDTO.builder()
@@ -49,7 +49,7 @@ public final class CarreraMapper {
 
     public static CarreraSummaryDTO aSummaryDTO(Carrera carrera) {
         if (carrera == null) {
-            return null;
+            throw new IllegalArgumentException("La entidad carrera es obligatoria");
         }
 
         return CarreraSummaryDTO.builder()

@@ -1,6 +1,7 @@
 package com.umg.sgau.estudiante.service;
 
 import com.umg.sgau.estudiante.entity.Estudiante;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -25,6 +26,10 @@ public interface EstudianteService {
             Long id,
             Boolean activo
     );
+
+    List<Estudiante> obtenerActivos();
+
+    List<String> obtenerCorreosActivos();
 
     Estudiante obtenerResumenPorId(Long id);
 

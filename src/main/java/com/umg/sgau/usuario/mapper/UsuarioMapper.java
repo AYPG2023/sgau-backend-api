@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 //solo expone métodos estáticos
-public class UsuarioMapper {
+public final class UsuarioMapper {
 
     // Constructor privado para evitar instanciación
     private UsuarioMapper() {}
@@ -20,7 +20,6 @@ public class UsuarioMapper {
         usuario.setEmail(dto.getEmail());
         usuario.setNombre(dto.getNombre());
         usuario.setApellido(dto.getApellido());
-        usuario.setActivo(dto.getActivo());
         return usuario;
     }
 
