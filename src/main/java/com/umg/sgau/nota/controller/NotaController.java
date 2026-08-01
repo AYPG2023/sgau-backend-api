@@ -36,6 +36,9 @@ import java.util.List;
  *   PUT    /api/notas/{id}                         -> actualizar
  *   PATCH  /api/notas/{id}/estado                   -> habilitar o inhabilitar
  *   GET    /api/notas/estudiante/{id}               -> notas del estudiante
+ *   GET    /api/notas/estudiante/{id}/activas       -> notas activas del estudiante
+ *   GET    /api/notas/curso/{id}                    -> notas del curso
+ *   GET    /api/notas/estudiante/{id}/curso/{id}    -> notas del estudiante en un curso
  *   GET    /api/notas/estudiante/{id}/promedio       -> promedio general
  *   GET    /api/notas/estudiante/{id}/calificaciones -> calificaciones (map + collect)
  */
@@ -98,25 +101,49 @@ public class NotaController {
     }
 
     @GetMapping("/estudiante/{estudianteId}")
-    public ResponseEntity<List<NotaResponseDTO>> notasDelEstudiante(
+    public ResponseEntity<Page<NotaResponseDTO>> notasDelEstudiante(
             @PathVariable Long estudianteId,
-            @RequestParam Integer cicloAnio) {
-        List<Nota> notas = notaService.obtenerNotasActivasPorEstudiante(
-                estudianteId, cicloAnio);
-        return ResponseEntity.ok(NotaMapper.aResponseDTOList(notas));
+            Pageable pageable) {
+        return ResponseEntity.ok(
+                notaService.obtenerNotasPorEstudiante(estudianteId, pageable)
+                        .map(NotaMapper::aResponseDTO));
+    }
+
+    @GetMapping("/estudiante/{estudianteId}/activas")
+    public ResponseEntity<Page<NotaResponseDTO>> notasActivasDelEstudiante(
+            @PathVariable Long estudianteId,
+            Pageable pageable) {
+        return ResponseEntity.ok(
+                notaService.obtenerNotasActivasPorEstudiante(estudianteId, pageable)
+                        .map(NotaMapper::aResponseDTO));
+    }
+
+    @GetMapping("/curso/{cursoId}")
+    public ResponseEntity<Page<NotaResponseDTO>> notasDelCurso(
+            @PathVariable Long cursoId,
+            Pageable pageable) {
+        return ResponseEntity.ok(
+                notaService.obtenerNotasPorCurso(cursoId, pageable)
+                        .map(NotaMapper::aResponseDTO));
+    }
+
+    @GetMapping("/estudiante/{estudianteId}/curso/{cursoId}")
+    public ResponseEntity<Page<NotaResponseDTO>> notasDelEstudiantePorCurso(
+            @PathVariable Long estudianteId,
+            @PathVariable Long cursoId,
+            Pageable pageable) {
+        return ResponseEntity.ok(
+                notaService.obtenerNotasPorEstudianteYCurso(estudianteId, cursoId, pageable)
+                        .map(NotaMapper::aResponseDTO));
     }
 
     @GetMapping("/estudiante/{estudianteId}/promedio")
     public ResponseEntity<PromedioResponseDTO> promedio(
-            @PathVariable Long estudianteId,
-            @RequestParam Integer cicloAnio) {
-        BigDecimal promedio = notaService.calcularPromedioGeneral(
-                estudianteId, cicloAnio);
-        List<Nota> notas = notaService.obtenerNotasActivasPorEstudiante(
-                estudianteId, cicloAnio);
+            @PathVariable Long estudianteId) {
+        BigDecimal promedio = notaService.calcularPromedioGeneral(estudianteId);
+        List<Nota> notas = notaService.obtenerNotasActivasPorEstudiante(estudianteId);
         PromedioResponseDTO response = PromedioResponseDTO.builder()
                 .estudianteId(estudianteId)
-                .cicloAnio(cicloAnio)
                 .promedioGeneral(promedio)
                 .cantidadNotas(notas.size())
                 .build();
@@ -125,9 +152,8 @@ public class NotaController {
 
     @GetMapping("/estudiante/{estudianteId}/calificaciones")
     public ResponseEntity<List<BigDecimal>> calificaciones(
-            @PathVariable Long estudianteId,
-            @RequestParam Integer cicloAnio) {
+            @PathVariable Long estudianteId) {
         return ResponseEntity.ok(
-                notaService.obtenerCalificacionesActivas(estudianteId, cicloAnio));
+                notaService.obtenerCalificacionesActivas(estudianteId));
     }
 }

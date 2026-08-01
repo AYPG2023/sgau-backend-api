@@ -15,7 +15,15 @@ public interface NotaRepository extends JpaRepository<Nota, Long> {
 
     Page<Nota> findByEstudianteId(Long estudianteId, Pageable pageable);
 
+    Page<Nota> findByEstudianteIdAndActivoTrue(Long estudianteId, Pageable pageable);
+
     Page<Nota> findByCursoId(Long cursoId, Pageable pageable);
+
+    Page<Nota> findByCursoIdAndActivoTrue(Long cursoId, Pageable pageable);
+
+    Page<Nota> findByEstudianteIdAndCursoId(Long estudianteId, Long cursoId, Pageable pageable);
+
+    Page<Nota> findByEstudianteIdAndCursoIdAndActivoTrue(Long estudianteId, Long cursoId, Pageable pageable);
 
     Page<Nota> findByCicloAnio(Integer cicloAnio, Pageable pageable);
 
@@ -23,6 +31,10 @@ public interface NotaRepository extends JpaRepository<Nota, Long> {
 
     List<Nota> findByEstudianteIdAndCicloAnioAndActivoTrue(
             Long estudianteId, Integer cicloAnio);
+
+    List<Nota> findByEstudianteIdAndActivoTrue(Long estudianteId);
+
+    List<Nota> findByEstudianteIdAndCursoIdAndActivoTrue(Long estudianteId, Long cursoId);
 
     boolean existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrue(
             Long estudianteId, Long cursoId, Integer cicloAnio, String tipoEvaluacion);
