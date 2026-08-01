@@ -1,17 +1,28 @@
 package com.umg.sgau.curso.serviceimpl;
 
+import com.umg.sgau.carrera.entity.Carrera;
+import com.umg.sgau.carrera.exception.CarreraNoEncontradaException;
+import com.umg.sgau.carrera.service.CarreraService;
+import com.umg.sgau.curso.exception.CarreraInactivaParaCursoException;
 import com.umg.sgau.curso.entity.Curso;
 import com.umg.sgau.curso.exception.CarreraCursoInvalidaException;
 import com.umg.sgau.curso.exception.CodigoCursoDuplicadoException;
 import com.umg.sgau.curso.exception.CursoAcademicoDuplicadoException;
+import com.umg.sgau.curso.exception.CursoInactivoException;
 import com.umg.sgau.curso.exception.CursoNoEncontradoException;
+import com.umg.sgau.curso.exception.CursoSinDocenteException;
+import com.umg.sgau.curso.exception.DocenteInactivoParaCursoException;
 import com.umg.sgau.curso.exception.DocenteCursoInvalidoException;
 import com.umg.sgau.curso.repository.CursoRepository;
 import com.umg.sgau.curso.service.CursoService;
+import com.umg.sgau.docente.entity.Docente;
+import com.umg.sgau.docente.exception.DocenteNoEncontradoException;
+import com.umg.sgau.docente.service.DocenteService;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
@@ -19,9 +30,16 @@ import org.springframework.stereotype.Service;
 public class CursoServiceImpl implements CursoService {
 
     private final CursoRepository cursoRepository;
+    private final CarreraService carreraService;
+    private final DocenteService docenteService;
 
-    public CursoServiceImpl(CursoRepository cursoRepository) {
+    public CursoServiceImpl(
+            CursoRepository cursoRepository,
+            CarreraService carreraService,
+            DocenteService docenteService) {
         this.cursoRepository = cursoRepository;
+        this.carreraService = carreraService;
+        this.docenteService = docenteService;
     }
 
     @Override
@@ -30,8 +48,7 @@ public class CursoServiceImpl implements CursoService {
         String nombreNormalizado = normalizarNombre(curso.getNombre());
         String descripcionNormalizada = normalizarDescripcion(curso.getDescripcion());
 
-        validarCarreraId(curso.getCarreraId());
-        validarDocenteIdOpcional(curso.getDocenteId());
+        validarCarreraActiva(curso.getCarreraId());
         validarCodigoDisponible(codigoNormalizado);
         validarCursoAcademicoDisponible(
                 nombreNormalizado,
@@ -41,6 +58,7 @@ public class CursoServiceImpl implements CursoService {
         curso.setCodigo(codigoNormalizado);
         curso.setNombre(nombreNormalizado);
         curso.setDescripcion(descripcionNormalizada);
+        curso.setDocenteId(null);
 
         if (curso.getActivo() == null) {
             curso.setActivo(true);
@@ -81,8 +99,7 @@ public class CursoServiceImpl implements CursoService {
         String nombreNormalizado = normalizarNombre(curso.getNombre());
         String descripcionNormalizada = normalizarDescripcion(curso.getDescripcion());
 
-        validarCarreraId(curso.getCarreraId());
-        validarDocenteIdOpcional(curso.getDocenteId());
+        validarCarreraActiva(curso.getCarreraId());
         validarCodigoDisponibleParaActualizar(codigoNormalizado, id);
         validarCursoAcademicoDisponibleParaActualizar(
                 nombreNormalizado,
@@ -96,7 +113,6 @@ public class CursoServiceImpl implements CursoService {
         existente.setCreditos(curso.getCreditos());
         existente.setHorasSemanales(curso.getHorasSemanales());
         existente.setCarreraId(curso.getCarreraId());
-        existente.setDocenteId(curso.getDocenteId());
         existente.setCicloAnio(curso.getCicloAnio());
 
         return cursoRepository.save(existente);
@@ -113,11 +129,44 @@ public class CursoServiceImpl implements CursoService {
     public Curso asignarDocente(Long id, Long docenteId) {
         Curso curso = obtenerPorId(id);
 
+        validarCursoActivo(curso);
         validarDocenteIdRequerido(docenteId);
+        validarDocenteActivo(docenteId);
 
         curso.setDocenteId(docenteId);
 
         return cursoRepository.save(curso);
+    }
+
+    @Override
+    public Curso retirarDocente(Long id) {
+        Curso curso = obtenerPorId(id);
+        curso.setDocenteId(null);
+        return cursoRepository.save(curso);
+    }
+
+    @Override
+    public Docente obtenerDocenteAsignado(Long id) {
+        Curso curso = obtenerPorId(id);
+
+        if (curso.getDocenteId() == null) {
+            throw new CursoSinDocenteException(id);
+        }
+
+        return obtenerDocenteExistente(curso.getDocenteId());
+    }
+
+    @Override
+    public Page<Curso> obtenerCursosActivosPorCarrera(Long carreraId, Pageable pageable) {
+        validarCarreraExistente(carreraId);
+
+        List<Curso> cursosActivos = cursoRepository.findByCarreraId(carreraId, pageable)
+                .getContent()
+                .stream()
+                .filter(curso -> Boolean.TRUE.equals(curso.getActivo()))
+                .collect(Collectors.toList());
+
+        return new PageImpl<>(cursosActivos, pageable, cursosActivos.size());
     }
 
     @Override
@@ -140,8 +189,9 @@ public class CursoServiceImpl implements CursoService {
     @Override
     public List<Curso> obtenerCursosPorDocente(Long docenteId) {
         validarDocenteIdRequerido(docenteId);
+        obtenerDocenteExistente(docenteId);
 
-        return cursoRepository.findAll()
+        return cursoRepository.findByDocenteId(docenteId)
                 .stream()
                 .filter(curso -> Boolean.TRUE.equals(curso.getActivo()))
                 .filter(curso -> docenteId.equals(curso.getDocenteId()))
@@ -157,7 +207,7 @@ public class CursoServiceImpl implements CursoService {
     }
 
     private String normalizarDescripcion(String descripcion) {
-        return descripcion == null ? null : descripcion.trim();
+        return descripcion == null ? "" : descripcion.trim();
     }
 
     private void validarCarreraId(Long carreraId) {
@@ -166,15 +216,47 @@ public class CursoServiceImpl implements CursoService {
         }
     }
 
-    private void validarDocenteIdOpcional(Long docenteId) {
-        if (docenteId != null && docenteId <= 0) {
-            throw new DocenteCursoInvalidoException(docenteId);
+    private Carrera validarCarreraExistente(Long carreraId) {
+        validarCarreraId(carreraId);
+        try {
+            return carreraService.obtenerPorId(carreraId);
+        } catch (CarreraNoEncontradaException exception) {
+            throw new CarreraCursoInvalidaException(carreraId);
+        }
+    }
+
+    private void validarCarreraActiva(Long carreraId) {
+        Carrera carrera = validarCarreraExistente(carreraId);
+        if (!Boolean.TRUE.equals(carrera.getActivo())) {
+            throw new CarreraInactivaParaCursoException(carreraId);
         }
     }
 
     private void validarDocenteIdRequerido(Long docenteId) {
         if (docenteId == null || docenteId <= 0) {
             throw new DocenteCursoInvalidoException(docenteId);
+        }
+    }
+
+    private Docente obtenerDocenteExistente(Long docenteId) {
+        validarDocenteIdRequerido(docenteId);
+        try {
+            return docenteService.obtenerPorId(docenteId);
+        } catch (DocenteNoEncontradoException exception) {
+            throw new DocenteCursoInvalidoException(docenteId);
+        }
+    }
+
+    private void validarDocenteActivo(Long docenteId) {
+        Docente docente = obtenerDocenteExistente(docenteId);
+        if (!Boolean.TRUE.equals(docente.getActivo())) {
+            throw new DocenteInactivoParaCursoException(docenteId);
+        }
+    }
+
+    private void validarCursoActivo(Curso curso) {
+        if (!Boolean.TRUE.equals(curso.getActivo())) {
+            throw new CursoInactivoException(curso.getId());
         }
     }
 

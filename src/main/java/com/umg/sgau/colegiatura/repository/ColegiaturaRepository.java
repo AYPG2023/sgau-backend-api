@@ -7,11 +7,34 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.math.BigDecimal;
+import java.util.List;
+
 public interface ColegiaturaRepository
         extends JpaRepository<Colegiatura, Long> {
 
     Page<Colegiatura> findByEstudianteId(
             Long estudianteId,
+            Pageable pageable
+    );
+
+    List<Colegiatura> findByEstudianteIdAndActivoTrueOrderByCicloAnioDescFechaEmisionDesc(
+            Long estudianteId
+    );
+
+    Page<Colegiatura> findByEstudianteIdAndActivoTrueOrderByCicloAnioDescFechaEmisionDesc(
+            Long estudianteId,
+            Pageable pageable
+    );
+
+    List<Colegiatura> findByEstudianteIdAndActivoTrueAndSaldoPendienteGreaterThanOrderByCicloAnioDescFechaEmisionDesc(
+            Long estudianteId,
+            BigDecimal saldoPendiente
+    );
+
+    Page<Colegiatura> findByEstudianteIdAndActivoTrueAndSaldoPendienteGreaterThanOrderByCicloAnioDescFechaEmisionDesc(
+            Long estudianteId,
+            BigDecimal saldoPendiente,
             Pageable pageable
     );
 
@@ -29,6 +52,8 @@ public interface ColegiaturaRepository
             Boolean activo,
             Pageable pageable
     );
+
+    List<Colegiatura> findByActivoTrue();
 
     boolean existsByEstudianteIdAndCicloAnioAndConceptoAndActivoTrue(
             Long estudianteId,

@@ -1,6 +1,18 @@
 package com.umg.sgau.nota.serviceimpl;
 
+import com.umg.sgau.curso.entity.Curso;
+import com.umg.sgau.curso.exception.CursoNoEncontradoException;
+import com.umg.sgau.curso.service.CursoService;
+import com.umg.sgau.estudiante.entity.Estudiante;
+import com.umg.sgau.estudiante.exception.EstudianteNoEncontradoException;
+import com.umg.sgau.estudiante.service.EstudianteService;
+import com.umg.sgau.inscripcion.service.InscripcionService;
 import com.umg.sgau.nota.entity.Nota;
+import com.umg.sgau.nota.exception.CursoInactivoParaNotaException;
+import com.umg.sgau.nota.exception.CursoInvalidoParaNotaException;
+import com.umg.sgau.nota.exception.EstudianteInactivoParaNotaException;
+import com.umg.sgau.nota.exception.EstudianteInvalidoParaNotaException;
+import com.umg.sgau.nota.exception.InscripcionActivaNoEncontradaException;
 import com.umg.sgau.nota.exception.NotaDuplicadaException;
 import com.umg.sgau.nota.exception.NotaInvalidaException;
 import com.umg.sgau.nota.exception.NotaNoEncontradaException;
@@ -20,44 +32,28 @@ import java.util.stream.Collectors;
 public class NotaServiceImpl implements NotaService {
 
     private final NotaRepository notaRepository;
+    private final EstudianteService estudianteService;
+    private final CursoService cursoService;
+    private final InscripcionService inscripcionService;
 
-    public NotaServiceImpl(NotaRepository notaRepository) {
+    public NotaServiceImpl(
+            NotaRepository notaRepository,
+            EstudianteService estudianteService,
+            CursoService cursoService,
+            InscripcionService inscripcionService) {
         this.notaRepository = notaRepository;
+        this.estudianteService = estudianteService;
+        this.cursoService = cursoService;
+        this.inscripcionService = inscripcionService;
     }
 
     @Override
     public Nota crear(Nota nota) {
-
-        // 1. Validar identificadores positivos
-        if (nota.getEstudianteId() == null || nota.getEstudianteId() <= 0) {
-            throw new NotaInvalidaException("El identificador del estudiante debe ser positivo.");
-        }
-        if (nota.getCursoId() == null || nota.getCursoId() <= 0) {
-            throw new NotaInvalidaException("El identificador del curso debe ser positivo.");
-        }
-
-        // 2. Validar calificacion entre 0 y 100
-        if (nota.getCalificacion() == null
-                || nota.getCalificacion().compareTo(BigDecimal.ZERO) < 0
-                || nota.getCalificacion().compareTo(new BigDecimal("100")) > 0) {
-            throw new NotaInvalidaException("La calificacion debe estar entre 0 y 100.");
-        }
-
-        // 3. Normalizar tipoEvaluacion en mayusculas
-        if (nota.getTipoEvaluacion() == null || nota.getTipoEvaluacion().isBlank()) {
-            throw new NotaInvalidaException("El tipo de evaluacion es obligatorio.");
-        }
-        nota.setTipoEvaluacion(nota.getTipoEvaluacion().trim().toUpperCase(Locale.ROOT));
-
-        // 4. Evitar notas activas duplicadas
-        if (notaRepository.existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrue(
-                nota.getEstudianteId(), nota.getCursoId(), nota.getCicloAnio(),
-                nota.getTipoEvaluacion())) {
-            throw new NotaDuplicadaException(
-                    "Ya existe una nota activa para el mismo estudiante, curso, ciclo y tipo de evaluacion.");
-        }
-
-        // 5. Asignar activo true (el @PrePersist tambien lo hace como respaldo)
+        validarDatosEditables(nota);
+        nota.setTipoEvaluacion(normalizarTipoEvaluacion(nota.getTipoEvaluacion()));
+        validarReferenciasActivas(nota);
+        validarInscripcionActiva(nota);
+        validarDuplicadoActivo(nota, null);
         nota.setActivo(true);
 
         return notaRepository.save(nota);
@@ -73,41 +69,25 @@ public class NotaServiceImpl implements NotaService {
     public Page<Nota> listar(
             Long estudianteId, Long cursoId, Integer cicloAnio,
             String tipoEvaluacion, Boolean activo, Pageable pageable) {
+        String tipoNormalizado = tipoEvaluacion == null
+                ? null
+                : normalizarTipoEvaluacion(tipoEvaluacion);
+
         return notaRepository.buscarConFiltros(
-                estudianteId, cursoId, cicloAnio, tipoEvaluacion, activo, pageable);
+                estudianteId, cursoId, cicloAnio, tipoNormalizado, activo, pageable);
     }
 
     @Override
     public Nota actualizar(Long id, Nota nota) {
 
-        // 1. Verificar que la nota exista
         Nota existente = obtenerPorId(id);
+        validarDatosEditables(nota);
 
-        // 2. Validar calificacion entre 0 y 100
-        if (nota.getCalificacion() == null
-                || nota.getCalificacion().compareTo(BigDecimal.ZERO) < 0
-                || nota.getCalificacion().compareTo(new BigDecimal("100")) > 0) {
-            throw new NotaInvalidaException("La calificacion debe estar entre 0 y 100.");
-        }
-
-        // 3. Normalizar tipoEvaluacion
-        if (nota.getTipoEvaluacion() == null || nota.getTipoEvaluacion().isBlank()) {
-            throw new NotaInvalidaException("El tipo de evaluacion es obligatorio.");
-        }
-        String tipoNormalizado = nota.getTipoEvaluacion().trim().toUpperCase(Locale.ROOT);
-
-        // 4. Validar duplicados excluyendo el mismo ID
-        if (notaRepository.existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrueAndIdNot(
-                existente.getEstudianteId(), existente.getCursoId(), existente.getCicloAnio(),
-                tipoNormalizado, id)) {
-            throw new NotaDuplicadaException(
-                    "Ya existe una nota activa para el mismo estudiante, curso, ciclo y tipo de evaluacion.");
-        }
-
-        // 5. Actualizar solo campos permitidos (sin tocar estudiante, curso, ciclo, activo ni auditoria)
-        existente.setTipoEvaluacion(tipoNormalizado);
+        existente.setTipoEvaluacion(normalizarTipoEvaluacion(nota.getTipoEvaluacion()));
         existente.setCalificacion(nota.getCalificacion());
         existente.setObservaciones(nota.getObservaciones());
+
+        validarDuplicadoActivo(existente, id);
 
         return notaRepository.save(existente);
     }
@@ -115,42 +95,155 @@ public class NotaServiceImpl implements NotaService {
     @Override
     public Nota cambiarEstado(Long id, Boolean activo) {
         Nota nota = obtenerPorId(id);
+
+        if (Boolean.TRUE.equals(activo)) {
+            validarReferenciasActivas(nota);
+            validarInscripcionActiva(nota);
+            validarDuplicadoActivo(nota, id);
+        }
+
         nota.setActivo(activo);
         return notaRepository.save(nota);
     }
 
     @Override
-    public List<Nota> obtenerNotasActivasPorEstudiante(Long estudianteId, Integer cicloAnio) {
-        return notaRepository.findAll()
+    public List<Nota> obtenerNotasActivasPorEstudiante(Long estudianteId) {
+        validarEstudianteExistente(estudianteId);
+        return notaRepository.findByEstudianteIdAndActivoTrue(estudianteId)
                 .stream()
                 .filter(nota -> Boolean.TRUE.equals(nota.getActivo()))
-                .filter(nota -> nota.getEstudianteId().equals(estudianteId))
-                .filter(nota -> nota.getCicloAnio().equals(cicloAnio))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<BigDecimal> obtenerCalificacionesActivas(Long estudianteId, Integer cicloAnio) {
-        return obtenerNotasActivasPorEstudiante(estudianteId, cicloAnio)
+    public List<Nota> obtenerNotasActivasPorEstudianteYCurso(Long estudianteId, Long cursoId) {
+        validarEstudianteExistente(estudianteId);
+        validarCursoExistente(cursoId);
+        return notaRepository.findByEstudianteIdAndCursoIdAndActivoTrue(estudianteId, cursoId)
+                .stream()
+                .filter(nota -> Boolean.TRUE.equals(nota.getActivo()))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<Nota> obtenerNotasPorEstudiante(Long estudianteId, Pageable pageable) {
+        validarEstudianteExistente(estudianteId);
+        return notaRepository.findByEstudianteId(estudianteId, pageable);
+    }
+
+    @Override
+    public Page<Nota> obtenerNotasActivasPorEstudiante(Long estudianteId, Pageable pageable) {
+        validarEstudianteExistente(estudianteId);
+        return notaRepository.findByEstudianteIdAndActivoTrue(estudianteId, pageable);
+    }
+
+    @Override
+    public Page<Nota> obtenerNotasPorCurso(Long cursoId, Pageable pageable) {
+        validarCursoExistente(cursoId);
+        return notaRepository.findByCursoId(cursoId, pageable);
+    }
+
+    @Override
+    public Page<Nota> obtenerNotasPorEstudianteYCurso(Long estudianteId, Long cursoId, Pageable pageable) {
+        validarEstudianteExistente(estudianteId);
+        validarCursoExistente(cursoId);
+        return notaRepository.findByEstudianteIdAndCursoId(estudianteId, cursoId, pageable);
+    }
+
+    @Override
+    public List<BigDecimal> obtenerCalificacionesActivas(Long estudianteId) {
+        return obtenerNotasActivasPorEstudiante(estudianteId)
                 .stream()
                 .map(Nota::getCalificacion)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public BigDecimal calcularPromedioGeneral(Long estudianteId, Integer cicloAnio) {
-        List<BigDecimal> calificaciones = obtenerCalificacionesActivas(estudianteId, cicloAnio);
+    public BigDecimal calcularPromedioGeneral(Long estudianteId) {
+        double promedio = obtenerCalificacionesActivas(estudianteId)
+                .stream()
+                .map(BigDecimal::doubleValue)
+                .mapToDouble(Double::doubleValue)
+                .average()
+                .orElse(0.00);
 
-        if (calificaciones.isEmpty()) {
-            return BigDecimal.ZERO;
+        return BigDecimal.valueOf(promedio).setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private void validarDatosEditables(Nota nota) {
+        if (nota.getCalificacion() == null
+                || nota.getCalificacion().compareTo(BigDecimal.ZERO) < 0
+                || nota.getCalificacion().compareTo(new BigDecimal("100")) > 0) {
+            throw new NotaInvalidaException("La calificacion debe estar entre 0 y 100.");
         }
 
-        BigDecimal suma = calificaciones.stream()
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        if (nota.getTipoEvaluacion() == null || nota.getTipoEvaluacion().isBlank()) {
+            throw new NotaInvalidaException("El tipo de evaluacion es obligatorio.");
+        }
+    }
 
-        return suma.divide(
-                BigDecimal.valueOf(calificaciones.size()),
-                2,
-                RoundingMode.HALF_UP);
+    private String normalizarTipoEvaluacion(String tipoEvaluacion) {
+        return tipoEvaluacion.trim().toUpperCase(Locale.ROOT);
+    }
+
+    private void validarReferenciasActivas(Nota nota) {
+        Estudiante estudiante = validarEstudianteExistente(nota.getEstudianteId());
+        if (!Boolean.TRUE.equals(estudiante.getActivo())) {
+            throw new EstudianteInactivoParaNotaException(nota.getEstudianteId());
+        }
+
+        Curso curso = validarCursoExistente(nota.getCursoId());
+        if (!Boolean.TRUE.equals(curso.getActivo())) {
+            throw new CursoInactivoParaNotaException(nota.getCursoId());
+        }
+    }
+
+    private Estudiante validarEstudianteExistente(Long estudianteId) {
+        if (estudianteId == null || estudianteId <= 0) {
+            throw new EstudianteInvalidoParaNotaException(estudianteId);
+        }
+
+        try {
+            return estudianteService.obtenerPorId(estudianteId);
+        } catch (EstudianteNoEncontradoException exception) {
+            throw new EstudianteInvalidoParaNotaException(estudianteId);
+        }
+    }
+
+    private Curso validarCursoExistente(Long cursoId) {
+        if (cursoId == null || cursoId <= 0) {
+            throw new CursoInvalidoParaNotaException(cursoId);
+        }
+
+        try {
+            return cursoService.obtenerPorId(cursoId);
+        } catch (CursoNoEncontradoException exception) {
+            throw new CursoInvalidoParaNotaException(cursoId);
+        }
+    }
+
+    private void validarInscripcionActiva(Nota nota) {
+        if (!inscripcionService.existeInscripcionActiva(
+                nota.getEstudianteId(),
+                nota.getCursoId(),
+                nota.getCicloAnio())) {
+            throw new InscripcionActivaNoEncontradaException(
+                    nota.getEstudianteId(),
+                    nota.getCursoId(),
+                    nota.getCicloAnio());
+        }
+    }
+
+    private void validarDuplicadoActivo(Nota nota, Long idExcluir) {
+        boolean duplicada = idExcluir == null
+                ? notaRepository.existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrue(
+                nota.getEstudianteId(), nota.getCursoId(), nota.getCicloAnio(), nota.getTipoEvaluacion())
+                : notaRepository.existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrueAndIdNot(
+                nota.getEstudianteId(), nota.getCursoId(), nota.getCicloAnio(), nota.getTipoEvaluacion(), idExcluir);
+
+        if (duplicada) {
+            throw new NotaDuplicadaException(
+                    "Ya existe una nota activa para el mismo estudiante, curso, ciclo y tipo de evaluacion.");
+        }
     }
 }

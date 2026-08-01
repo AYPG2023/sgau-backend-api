@@ -1,6 +1,7 @@
 package com.umg.sgau.curso.service;
 
 import com.umg.sgau.curso.entity.Curso;
+import com.umg.sgau.docente.entity.Docente;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -71,6 +72,12 @@ public interface CursoService {
      * @return curso con el docente asignado
      */
     Curso asignarDocente(Long id, Long docenteId);
+
+    Curso retirarDocente(Long id);
+
+    Docente obtenerDocenteAsignado(Long id);
+
+    Page<Curso> obtenerCursosActivosPorCarrera(Long carreraId, Pageable pageable);
 
     /**
      * Obtiene los cursos activos.

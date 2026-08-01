@@ -2,6 +2,7 @@ package com.umg.sgau.colegiatura.mapper;
 
 import com.umg.sgau.colegiatura.dto.*;
 import com.umg.sgau.colegiatura.entity.Colegiatura;
+import com.umg.sgau.colegiatura.model.EstadoCuentaEstudiante;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -48,12 +49,17 @@ public final class ColegiaturaMapper {
     }
 
     public static EstadoCuentaResponseDTO toEstadoCuentaDTO(
-            Colegiatura colegiatura) {
+            EstadoCuentaEstudiante estadoCuenta) {
 
         return EstadoCuentaResponseDTO.builder()
-                .montoTotal(colegiatura.getMontoTotal())
-                .montoPagado(colegiatura.getMontoPagado())
-                .saldoPendiente(colegiatura.getSaldoPendiente())
+                .estudianteId(estadoCuenta.estudianteId())
+                .estudianteNombre(estadoCuenta.estudianteNombre())
+                .totalCargos(estadoCuenta.totalCargos())
+                .totalPagado(estadoCuenta.totalPagado())
+                .saldoPendiente(estadoCuenta.saldoPendiente())
+                .cantidadCargos(estadoCuenta.cantidadCargos())
+                .cantidadPendientes(estadoCuenta.cantidadPendientes())
+                .detalle(toResponseDTOList(estadoCuenta.detalle()))
                 .build();
     }
 

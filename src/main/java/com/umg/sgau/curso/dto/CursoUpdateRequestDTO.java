@@ -67,9 +67,6 @@ public class CursoUpdateRequestDTO {
     @Positive(message = "El identificador de la carrera debe ser positivo")
     private Long carreraId;
 
-    @Positive(message = "El identificador del docente debe ser positivo")
-    private Long docenteId;
-
     @NotNull(message = "El ciclo academico es obligatorio")
     @Min(
             value = 2020,

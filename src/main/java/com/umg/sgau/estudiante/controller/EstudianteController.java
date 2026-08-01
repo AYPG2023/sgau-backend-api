@@ -7,6 +7,7 @@ import com.umg.sgau.estudiante.entity.Estudiante;
 import com.umg.sgau.estudiante.exception.EstudianteNoEncontradoException;
 import com.umg.sgau.estudiante.mapper.EstudianteMapper;
 import com.umg.sgau.estudiante.service.EstudianteService;
+import com.umg.sgau.historialacademico.service.HistorialAcademicoService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,11 +22,14 @@ import jakarta.validation.Valid;
 public class EstudianteController {
 
     private final EstudianteService estudianteService;
+    private final HistorialAcademicoService historialAcademicoService;
 
     public EstudianteController(
-            EstudianteService estudianteService
+            EstudianteService estudianteService,
+            HistorialAcademicoService historialAcademicoService
     ) {
         this.estudianteService = estudianteService;
+        this.historialAcademicoService = historialAcademicoService;
     }
 
     @PostMapping
@@ -188,19 +192,26 @@ public class EstudianteController {
             @PathVariable Long id
     ) {
 
-        try {
+        return ResponseEntity.ok(historialAcademicoService.generarHistorial(id));
 
-            return ResponseEntity.ok(
-                    estudianteService.obtenerHistorialAcademico(id)
-            );
+    }
 
-        } catch (RuntimeException ex) {
+    @GetMapping("/{id}/historial-academico")
+    public ResponseEntity<?> obtenerHistorialAcademico(
+            @PathVariable Long id
+    ) {
 
-            return ResponseEntity
-                    .status(HttpStatus.NOT_IMPLEMENTED)
-                    .body(ex.getMessage());
+        return ResponseEntity.ok(historialAcademicoService.generarHistorial(id));
 
-        }
+    }
+
+    @GetMapping("/{id}/historial-academico/ciclo/{cicloAnio}")
+    public ResponseEntity<?> obtenerHistorialAcademicoPorCiclo(
+            @PathVariable Long id,
+            @PathVariable Integer cicloAnio
+    ) {
+
+        return ResponseEntity.ok(historialAcademicoService.generarHistorialPorCiclo(id, cicloAnio));
 
     }
 

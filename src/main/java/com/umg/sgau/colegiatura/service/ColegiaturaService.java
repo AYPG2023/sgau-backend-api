@@ -1,6 +1,7 @@
 package com.umg.sgau.colegiatura.service;
 
 import com.umg.sgau.colegiatura.entity.Colegiatura;
+import com.umg.sgau.colegiatura.model.EstadoCuentaEstudiante;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -46,6 +47,32 @@ public interface ColegiaturaService {
     List<BigDecimal> obtenerSaldosPendientes();
 
     List<Colegiatura> obtenerHistorialPorEstudiante(
+            Long estudianteId
+    );
+
+    List<Colegiatura> obtenerActivasPorEstudiante(
+            Long estudianteId
+    );
+
+    Page<Colegiatura> obtenerActivasPorEstudiante(
+            Long estudianteId,
+            Pageable pageable
+    );
+
+    List<Colegiatura> obtenerPendientesPorEstudiante(
+            Long estudianteId
+    );
+
+    Page<Colegiatura> obtenerPendientesPorEstudiante(
+            Long estudianteId,
+            Pageable pageable
+    );
+
+    BigDecimal calcularSaldoPendiente(
+            Long estudianteId
+    );
+
+    EstadoCuentaEstudiante generarEstadoCuenta(
             Long estudianteId
     );
 

@@ -48,20 +48,29 @@ public interface NotaService {
     Nota cambiarEstado(Long id, Boolean activo);
 
     /**
-     * Obtiene las notas activas de un estudiante en un ciclo academico.
-     * Demuestra filter() en Streams.
+     * Obtiene las notas activas de un estudiante.
      */
-    List<Nota> obtenerNotasActivasPorEstudiante(Long estudianteId, Integer cicloAnio);
+    List<Nota> obtenerNotasActivasPorEstudiante(Long estudianteId);
+
+    List<Nota> obtenerNotasActivasPorEstudianteYCurso(Long estudianteId, Long cursoId);
+
+    Page<Nota> obtenerNotasPorEstudiante(Long estudianteId, Pageable pageable);
+
+    Page<Nota> obtenerNotasActivasPorEstudiante(Long estudianteId, Pageable pageable);
+
+    Page<Nota> obtenerNotasPorCurso(Long cursoId, Pageable pageable);
+
+    Page<Nota> obtenerNotasPorEstudianteYCurso(Long estudianteId, Long cursoId, Pageable pageable);
 
     /**
      * Obtiene la lista de calificaciones activas de un estudiante.
      * Demuestra map() en Streams.
      */
-    List<BigDecimal> obtenerCalificacionesActivas(Long estudianteId, Integer cicloAnio);
+    List<BigDecimal> obtenerCalificacionesActivas(Long estudianteId);
 
     /**
-     * Calcula el promedio general de un estudiante en un ciclo academico.
-     * Demuestra reduce() en Streams. Redondea a 2 decimales con HALF_UP.
+     * Calcula el promedio general de un estudiante.
+     * Usa mapToDouble() y average(). Redondea a 2 decimales con HALF_UP.
      */
-    BigDecimal calcularPromedioGeneral(Long estudianteId, Integer cicloAnio);
+    BigDecimal calcularPromedioGeneral(Long estudianteId);
 }

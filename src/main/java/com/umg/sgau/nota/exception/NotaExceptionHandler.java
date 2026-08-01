@@ -23,4 +23,21 @@ public class NotaExceptionHandler {
     public ResponseEntity<String> manejarInvalida(NotaInvalidaException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
+
+    @ExceptionHandler({
+            EstudianteInvalidoParaNotaException.class,
+            CursoInvalidoParaNotaException.class
+    })
+    public ResponseEntity<String> manejarReferenciaInexistente(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+    }
+
+    @ExceptionHandler({
+            EstudianteInactivoParaNotaException.class,
+            CursoInactivoParaNotaException.class,
+            InscripcionActivaNoEncontradaException.class
+    })
+    public ResponseEntity<String> manejarReferenciaInvalida(RuntimeException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
 }

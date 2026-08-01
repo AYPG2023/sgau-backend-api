@@ -29,6 +29,23 @@ public class InscripcionExceptionHandler {
         return crearRespuesta(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler({
+            EstudianteInvalidoParaInscripcionException.class,
+            CursoInvalidoParaInscripcionException.class
+    })
+    public ResponseEntity<Map<String, Object>> manejarReferenciaInexistente(RuntimeException ex) {
+        return crearRespuesta(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
+
+    @ExceptionHandler({
+            EstudianteInactivoParaInscripcionException.class,
+            CursoInactivoParaInscripcionException.class,
+            CursoNoPerteneceCarreraException.class
+    })
+    public ResponseEntity<Map<String, Object>> manejarReferenciaInvalida(RuntimeException ex) {
+        return crearRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, Object>> manejarEstadoInvalido(
             IllegalStateException ex) {

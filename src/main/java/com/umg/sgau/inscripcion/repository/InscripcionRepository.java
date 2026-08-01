@@ -8,18 +8,41 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+
 @Repository
 public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> {
 
     Page<Inscripcion> findByEstudianteId(Long estudianteId, Pageable pageable);
 
+    Page<Inscripcion> findByEstudianteIdAndActivoTrue(Long estudianteId, Pageable pageable);
+
     Page<Inscripcion> findByCarreraId(Long carreraId, Pageable pageable);
+
+    Page<Inscripcion> findByCursoId(Long cursoId, Pageable pageable);
+
+    Page<Inscripcion> findByCursoIdAndActivoTrue(Long cursoId, Pageable pageable);
 
     Page<Inscripcion> findByCicloAnio(Integer cicloAnio, Pageable pageable);
 
     Page<Inscripcion> findByEstado(String estado, Pageable pageable);
 
     Page<Inscripcion> findByActivo(Boolean activo, Pageable pageable);
+
+    List<Inscripcion> findByActivoTrue();
+
+    boolean existsByEstudianteIdAndCursoIdAndCicloAnioAndActivoTrue(
+            Long estudianteId,
+            Long cursoId,
+            Integer cicloAnio
+    );
+
+    boolean existsByEstudianteIdAndCursoIdAndCicloAnioAndActivoTrueAndIdNot(
+            Long estudianteId,
+            Long cursoId,
+            Integer cicloAnio,
+            Long id
+    );
 
     // Regla de negocio: no permitir inscripcion activa duplicada
     boolean existsByEstudianteIdAndCarreraIdAndGradoAndSeccionAndCicloAnioAndActivoTrue(

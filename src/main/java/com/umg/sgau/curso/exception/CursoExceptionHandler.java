@@ -42,6 +42,30 @@ public class CursoExceptionHandler {
         return crearRespuesta(HttpStatus.BAD_REQUEST, exception.getMessage());
     }
 
+    @ExceptionHandler(CarreraInactivaParaCursoException.class)
+    public ResponseEntity<Map<String, Object>> manejarCarreraInactivaParaCurso(
+            CarreraInactivaParaCursoException exception) {
+        return crearRespuesta(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(DocenteInactivoParaCursoException.class)
+    public ResponseEntity<Map<String, Object>> manejarDocenteInactivoParaCurso(
+            DocenteInactivoParaCursoException exception) {
+        return crearRespuesta(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(CursoInactivoException.class)
+    public ResponseEntity<Map<String, Object>> manejarCursoInactivo(
+            CursoInactivoException exception) {
+        return crearRespuesta(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(CursoSinDocenteException.class)
+    public ResponseEntity<Map<String, Object>> manejarCursoSinDocente(
+            CursoSinDocenteException exception) {
+        return crearRespuesta(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
     private ResponseEntity<Map<String, Object>> crearRespuesta(
             HttpStatus estado,
             String mensaje) {

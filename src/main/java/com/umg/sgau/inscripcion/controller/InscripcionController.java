@@ -34,6 +34,7 @@ import java.util.List;
  *   GET    /api/inscripciones/{id}             -> obtener por id
  *   PUT    /api/inscripciones/{id}             -> actualizar
  *   PATCH  /api/inscripciones/{id}/estado      -> anular (soft-delete)
+ *   PATCH  /api/inscripciones/{id}/reactivar   -> reactivar
  *   GET    /api/inscripciones/estudiante/{id}  -> historial por estudiante
  */
 @RestController
@@ -116,6 +117,12 @@ public class InscripcionController {
                 InscripcionMapper.aResponseDTO(inscripcionService.anular(id, request.getMotivo())));
     }
 
+    @PatchMapping("/{id}/reactivar")
+    public ResponseEntity<InscripcionResponseDTO> reactivar(@PathVariable Long id) {
+        return ResponseEntity.ok(
+                InscripcionMapper.aResponseDTO(inscripcionService.reactivar(id)));
+    }
+
     /**
      * Historial de inscripciones de un estudiante,
      * ordenado por fecha de inscripcion descendente.
@@ -126,6 +133,33 @@ public class InscripcionController {
             Pageable pageable) {
         return ResponseEntity.ok(
                 inscripcionService.historialPorEstudiante(estudianteId, pageable)
+                        .map(InscripcionMapper::aResponseDTO));
+    }
+
+    @GetMapping("/curso/{cursoId}")
+    public ResponseEntity<Page<InscripcionResponseDTO>> inscripcionesPorCurso(
+            @PathVariable Long cursoId,
+            Pageable pageable) {
+        return ResponseEntity.ok(
+                inscripcionService.inscripcionesPorCurso(cursoId, pageable)
+                        .map(InscripcionMapper::aResponseDTO));
+    }
+
+    @GetMapping("/estudiante/{estudianteId}/activas")
+    public ResponseEntity<Page<InscripcionResponseDTO>> inscripcionesActivasPorEstudiante(
+            @PathVariable Long estudianteId,
+            Pageable pageable) {
+        return ResponseEntity.ok(
+                inscripcionService.inscripcionesActivasPorEstudiante(estudianteId, pageable)
+                        .map(InscripcionMapper::aResponseDTO));
+    }
+
+    @GetMapping("/curso/{cursoId}/activas")
+    public ResponseEntity<Page<InscripcionResponseDTO>> inscripcionesActivasPorCurso(
+            @PathVariable Long cursoId,
+            Pageable pageable) {
+        return ResponseEntity.ok(
+                inscripcionService.inscripcionesActivasPorCurso(cursoId, pageable)
                         .map(InscripcionMapper::aResponseDTO));
     }
 
