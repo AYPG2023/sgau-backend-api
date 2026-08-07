@@ -52,7 +52,11 @@ public class InscripcionController {
     public ResponseEntity<InscripcionResponseDTO> registrar(
             @Valid @RequestBody InscripcionCreateRequestDTO request) {
         Inscripcion inscripcion = InscripcionMapper.aEntidad(request);
-        Inscripcion registrada = inscripcionService.registrar(inscripcion);
+        Inscripcion registrada = inscripcionService.registrar(
+                inscripcion,
+                request.getEstudianteId(),
+                request.getCarreraId(),
+                request.getCursoId());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(InscripcionMapper.aResponseDTO(registrada));
     }
@@ -102,7 +106,8 @@ public class InscripcionController {
         Inscripcion datos = new Inscripcion();
         InscripcionMapper.actualizarEntidad(request, datos);
         return ResponseEntity.ok(
-                InscripcionMapper.aResponseDTO(inscripcionService.actualizar(id, datos)));
+                InscripcionMapper.aResponseDTO(
+                        inscripcionService.actualizar(id, datos, request.getCarreraId(), request.getCursoId())));
     }
 
     /**

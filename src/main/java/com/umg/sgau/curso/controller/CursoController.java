@@ -43,6 +43,7 @@ public class CursoController {
     public ResponseEntity<CursoResponseDTO> crear(
             @Valid @RequestBody CursoCreateRequestDTO request) {
         Curso curso = CursoMapper.aEntidad(request);
+        curso.setCarreraId(request.getCarreraId());
         Curso creado = cursoService.crear(curso);
         CursoResponseDTO response = CursoMapper.aResponseDTO(creado);
 
@@ -123,6 +124,7 @@ public class CursoController {
 
         CursoMapper.actualizarEntidad(request, datos);
 
+        datos.setCarreraId(request.getCarreraId());
         Curso actualizado = cursoService.actualizar(id, datos);
 
         return ResponseEntity.ok(CursoMapper.aResponseDTO(actualizado));

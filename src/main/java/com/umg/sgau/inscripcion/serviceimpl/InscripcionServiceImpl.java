@@ -1,5 +1,8 @@
 package com.umg.sgau.inscripcion.serviceimpl;
 
+import com.umg.sgau.carrera.entity.Carrera;
+import com.umg.sgau.carrera.exception.CarreraNoEncontradaException;
+import com.umg.sgau.carrera.service.CarreraService;
 import com.umg.sgau.curso.entity.Curso;
 import com.umg.sgau.curso.exception.CursoNoEncontradoException;
 import com.umg.sgau.curso.service.CursoService;
@@ -18,23 +21,43 @@ import com.umg.sgau.inscripcion.repository.InscripcionRepository;
 import com.umg.sgau.inscripcion.service.InscripcionService;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 @Transactional
 public class InscripcionServiceImpl implements InscripcionService {
 
     private final InscripcionRepository inscripcionRepository;
     private final EstudianteService estudianteService;
+    private final CarreraService carreraService;
     private final CursoService cursoService;
 
+    @Autowired
+    public InscripcionServiceImpl(
+            InscripcionRepository inscripcionRepository,
+            EstudianteService estudianteService,
+            CarreraService carreraService,
+            CursoService cursoService) {
+        this.inscripcionRepository = inscripcionRepository;
+        this.estudianteService = estudianteService;
+        this.carreraService = carreraService;
+        this.cursoService = cursoService;
+    }
+
+    public InscripcionServiceImpl(
+            InscripcionRepository inscripcionRepository,
+            EstudianteService estudianteService,
+            CursoService cursoService) {
+        this(inscripcionRepository, estudianteService, null, cursoService);
+    }
+
     @Override
-    public Inscripcion registrar(Inscripcion inscripcion) {
+    public Inscripcion registrar(Inscripcion inscripcion, Long estudianteId, Long carreraId, Long cursoId) {
+        asignarReferencias(inscripcion, estudianteId, carreraId, cursoId);
         validarReferenciasActivas(inscripcion);
         validarDuplicadoActivo(inscripcion, null);
 
@@ -62,14 +85,13 @@ public class InscripcionServiceImpl implements InscripcionService {
     }
 
     @Override
-    public Inscripcion actualizar(Long id, Inscripcion inscripcion) {
+    public Inscripcion actualizar(Long id, Inscripcion inscripcion, Long carreraId, Long cursoId) {
 
         Inscripcion existente = obtenerPorId(id);
 
-        existente.setCarreraId(inscripcion.getCarreraId());
-        if (inscripcion.getCursoId() != null) {
-            existente.setCursoId(inscripcion.getCursoId());
-        }
+        Long carreraIdActualizada = carreraId == null ? getCarreraId(existente) : carreraId;
+        Long cursoIdActualizado = cursoId == null ? getCursoId(existente) : cursoId;
+        asignarReferencias(existente, getEstudianteId(existente), carreraIdActualizada, cursoIdActualizado);
         existente.setGrado(inscripcion.getGrado());
         existente.setSeccion(inscripcion.getSeccion());
         existente.setCicloAnio(inscripcion.getCicloAnio());
@@ -163,7 +185,8 @@ public class InscripcionServiceImpl implements InscripcionService {
         return obtenerActivas()
                 .stream()
                 .filter(inscripcion -> Boolean.TRUE.equals(inscripcion.getActivo()))
-                .map(Inscripcion::getEstudianteId)
+                .filter(inscripcion -> inscripcion.getEstudiante() != null)
+                .map(inscripcion -> inscripcion.getEstudiante().getId())
                 .collect(Collectors.toList());
     }
 
@@ -178,18 +201,32 @@ public class InscripcionServiceImpl implements InscripcionService {
                 estudianteId, cursoId, cicloAnio);
     }
 
-    private void validarReferenciasActivas(Inscripcion inscripcion) {
-        Estudiante estudiante = validarEstudianteExistente(inscripcion.getEstudianteId());
+    private void asignarReferencias(Inscripcion inscripcion, Long estudianteId, Long carreraId, Long cursoId) {
+        Estudiante estudiante = validarEstudianteExistente(estudianteId);
         if (!Boolean.TRUE.equals(estudiante.getActivo())) {
-            throw new EstudianteInactivoParaInscripcionException(inscripcion.getEstudianteId());
+            throw new EstudianteInactivoParaInscripcionException(estudianteId);
         }
+        inscripcion.setEstudiante(estudiante);
+        inscripcion.setCarrera(validarCarreraExistente(carreraId));
+        inscripcion.setCurso(cursoId == null ? null : validarCursoExistente(cursoId));
+    }
 
+    private void validarReferenciasActivas(Inscripcion inscripcion) {
+        Long estudianteId = getEstudianteId(inscripcion);
+        Estudiante estudiante = validarEstudianteExistente(estudianteId);
+        if (!Boolean.TRUE.equals(estudiante.getActivo())) {
+            throw new EstudianteInactivoParaInscripcionException(estudianteId);
+        }
+        inscripcion.setEstudiante(estudiante);
+
+        Long cursoId = getCursoId(inscripcion);
         Curso curso = null;
-        if (inscripcion.getCursoId() != null) {
-            curso = validarCursoExistente(inscripcion.getCursoId());
-            if (!Boolean.TRUE.equals(curso.getActivo())) {
-                throw new CursoInactivoParaInscripcionException(inscripcion.getCursoId());
-            }
+        if (cursoId != null) {
+            curso = validarCursoExistente(cursoId);
+            inscripcion.setCurso(curso);
+        }
+        if (curso != null && !Boolean.TRUE.equals(curso.getActivo())) {
+            throw new CursoInactivoParaInscripcionException(cursoId);
         }
 
         validarCursoPerteneceCarrera(inscripcion, curso);
@@ -219,14 +256,31 @@ public class InscripcionServiceImpl implements InscripcionService {
         }
     }
 
+    private Carrera validarCarreraExistente(Long carreraId) {
+        if (carreraId == null || carreraId <= 0) {
+            throw new CursoNoPerteneceCarreraException(null, carreraId);
+        }
+
+        if (carreraService == null) {
+            return Carrera.builder().id(carreraId).activo(true).build();
+        }
+
+        try {
+            return carreraService.obtenerPorId(carreraId);
+        } catch (CarreraNoEncontradaException exception) {
+            throw new CursoNoPerteneceCarreraException(null, carreraId);
+        }
+    }
+
     private void validarCursoPerteneceCarrera(Inscripcion inscripcion, Curso curso) {
-        if (curso != null && !curso.getCarreraId().equals(inscripcion.getCarreraId())) {
-            throw new CursoNoPerteneceCarreraException(inscripcion.getCursoId(), inscripcion.getCarreraId());
+        Long carreraId = getCarreraId(inscripcion);
+        if (curso != null && curso.getCarrera() != null && !curso.getCarrera().getId().equals(carreraId)) {
+            throw new CursoNoPerteneceCarreraException(getCursoId(inscripcion), carreraId);
         }
     }
 
     private void validarDuplicadoActivo(Inscripcion inscripcion, Long idExcluir) {
-        boolean duplicada = inscripcion.getCursoId() == null
+        boolean duplicada = getCursoId(inscripcion) == null
                 ? existeDuplicadoActivoSinCurso(inscripcion, idExcluir)
                 : existeDuplicadoActivoConCurso(inscripcion, idExcluir);
 
@@ -234,35 +288,47 @@ public class InscripcionServiceImpl implements InscripcionService {
             return;
         }
 
-        if (inscripcion.getCursoId() == null) {
+        if (getCursoId(inscripcion) == null) {
             throw new InscripcionDuplicadaException(
-                    inscripcion.getEstudianteId(), inscripcion.getCarreraId(), inscripcion.getGrado(),
+                    getEstudianteId(inscripcion), getCarreraId(inscripcion), inscripcion.getGrado(),
                     inscripcion.getSeccion(), inscripcion.getCicloAnio());
         }
 
         throw new InscripcionDuplicadaException(
-                inscripcion.getEstudianteId(), inscripcion.getCursoId(), inscripcion.getCicloAnio());
+                getEstudianteId(inscripcion), getCursoId(inscripcion), inscripcion.getCicloAnio());
     }
 
     private boolean existeDuplicadoActivoConCurso(Inscripcion inscripcion, Long idExcluir) {
         if (idExcluir == null) {
             return inscripcionRepository.existsByEstudianteIdAndCursoIdAndCicloAnioAndActivoTrue(
-                    inscripcion.getEstudianteId(), inscripcion.getCursoId(), inscripcion.getCicloAnio());
+                    getEstudianteId(inscripcion), getCursoId(inscripcion), inscripcion.getCicloAnio());
         }
 
         return inscripcionRepository.existsByEstudianteIdAndCursoIdAndCicloAnioAndActivoTrueAndIdNot(
-                inscripcion.getEstudianteId(), inscripcion.getCursoId(), inscripcion.getCicloAnio(), idExcluir);
+                getEstudianteId(inscripcion), getCursoId(inscripcion), inscripcion.getCicloAnio(), idExcluir);
     }
 
     private boolean existeDuplicadoActivoSinCurso(Inscripcion inscripcion, Long idExcluir) {
         if (idExcluir == null) {
             return inscripcionRepository.existsByEstudianteIdAndCarreraIdAndGradoAndSeccionAndCicloAnioAndActivoTrue(
-                    inscripcion.getEstudianteId(), inscripcion.getCarreraId(), inscripcion.getGrado(),
+                    getEstudianteId(inscripcion), getCarreraId(inscripcion), inscripcion.getGrado(),
                     inscripcion.getSeccion(), inscripcion.getCicloAnio());
         }
 
         return inscripcionRepository.existsByEstudianteIdAndCarreraIdAndGradoAndSeccionAndCicloAnioAndActivoTrueAndIdNot(
-                inscripcion.getEstudianteId(), inscripcion.getCarreraId(), inscripcion.getGrado(),
+                getEstudianteId(inscripcion), getCarreraId(inscripcion), inscripcion.getGrado(),
                 inscripcion.getSeccion(), inscripcion.getCicloAnio(), idExcluir);
+    }
+
+    private Long getEstudianteId(Inscripcion inscripcion) {
+        return inscripcion.getEstudiante() == null ? null : inscripcion.getEstudiante().getId();
+    }
+
+    private Long getCarreraId(Inscripcion inscripcion) {
+        return inscripcion.getCarrera() == null ? null : inscripcion.getCarrera().getId();
+    }
+
+    private Long getCursoId(Inscripcion inscripcion) {
+        return inscripcion.getCurso() == null ? null : inscripcion.getCurso().getId();
     }
 }

@@ -13,40 +13,98 @@ import java.util.List;
 @Repository
 public interface NotaRepository extends JpaRepository<Nota, Long> {
 
-    Page<Nota> findByEstudianteId(Long estudianteId, Pageable pageable);
+    Page<Nota> findByEstudiante_Id(Long estudianteId, Pageable pageable);
 
-    Page<Nota> findByEstudianteIdAndActivoTrue(Long estudianteId, Pageable pageable);
+    default Page<Nota> findByEstudianteId(Long estudianteId, Pageable pageable) {
+        return findByEstudiante_Id(estudianteId, pageable);
+    }
 
-    Page<Nota> findByCursoId(Long cursoId, Pageable pageable);
+    Page<Nota> findByEstudiante_IdAndActivoTrue(Long estudianteId, Pageable pageable);
 
-    Page<Nota> findByCursoIdAndActivoTrue(Long cursoId, Pageable pageable);
+    default Page<Nota> findByEstudianteIdAndActivoTrue(Long estudianteId, Pageable pageable) {
+        return findByEstudiante_IdAndActivoTrue(estudianteId, pageable);
+    }
 
-    Page<Nota> findByEstudianteIdAndCursoId(Long estudianteId, Long cursoId, Pageable pageable);
+    Page<Nota> findByCurso_Id(Long cursoId, Pageable pageable);
 
-    Page<Nota> findByEstudianteIdAndCursoIdAndActivoTrue(Long estudianteId, Long cursoId, Pageable pageable);
+    default Page<Nota> findByCursoId(Long cursoId, Pageable pageable) {
+        return findByCurso_Id(cursoId, pageable);
+    }
+
+    Page<Nota> findByCurso_IdAndActivoTrue(Long cursoId, Pageable pageable);
+
+    default Page<Nota> findByCursoIdAndActivoTrue(Long cursoId, Pageable pageable) {
+        return findByCurso_IdAndActivoTrue(cursoId, pageable);
+    }
+
+    Page<Nota> findByEstudiante_IdAndCurso_Id(Long estudianteId, Long cursoId, Pageable pageable);
+
+    default Page<Nota> findByEstudianteIdAndCursoId(Long estudianteId, Long cursoId, Pageable pageable) {
+        return findByEstudiante_IdAndCurso_Id(estudianteId, cursoId, pageable);
+    }
+
+    Page<Nota> findByEstudiante_IdAndCurso_IdAndActivoTrue(Long estudianteId, Long cursoId, Pageable pageable);
+
+    default Page<Nota> findByEstudianteIdAndCursoIdAndActivoTrue(
+            Long estudianteId,
+            Long cursoId,
+            Pageable pageable) {
+        return findByEstudiante_IdAndCurso_IdAndActivoTrue(estudianteId, cursoId, pageable);
+    }
 
     Page<Nota> findByCicloAnio(Integer cicloAnio, Pageable pageable);
 
     Page<Nota> findByActivo(Boolean activo, Pageable pageable);
 
-    List<Nota> findByEstudianteIdAndCicloAnioAndActivoTrue(
+    List<Nota> findByEstudiante_IdAndCicloAnioAndActivoTrue(
             Long estudianteId, Integer cicloAnio);
 
-    List<Nota> findByEstudianteIdAndActivoTrue(Long estudianteId);
+    default List<Nota> findByEstudianteIdAndCicloAnioAndActivoTrue(Long estudianteId, Integer cicloAnio) {
+        return findByEstudiante_IdAndCicloAnioAndActivoTrue(estudianteId, cicloAnio);
+    }
 
-    List<Nota> findByEstudianteIdAndCursoIdAndActivoTrue(Long estudianteId, Long cursoId);
+    List<Nota> findByEstudiante_IdAndActivoTrue(Long estudianteId);
 
-    boolean existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrue(
+    default List<Nota> findByEstudianteIdAndActivoTrue(Long estudianteId) {
+        return findByEstudiante_IdAndActivoTrue(estudianteId);
+    }
+
+    List<Nota> findByEstudiante_IdAndCurso_IdAndActivoTrue(Long estudianteId, Long cursoId);
+
+    default List<Nota> findByEstudianteIdAndCursoIdAndActivoTrue(Long estudianteId, Long cursoId) {
+        return findByEstudiante_IdAndCurso_IdAndActivoTrue(estudianteId, cursoId);
+    }
+
+    boolean existsByEstudiante_IdAndCurso_IdAndCicloAnioAndTipoEvaluacionAndActivoTrue(
             Long estudianteId, Long cursoId, Integer cicloAnio, String tipoEvaluacion);
 
-    boolean existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrueAndIdNot(
+    default boolean existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrue(
+            Long estudianteId,
+            Long cursoId,
+            Integer cicloAnio,
+            String tipoEvaluacion) {
+        return existsByEstudiante_IdAndCurso_IdAndCicloAnioAndTipoEvaluacionAndActivoTrue(
+                estudianteId, cursoId, cicloAnio, tipoEvaluacion);
+    }
+
+    boolean existsByEstudiante_IdAndCurso_IdAndCicloAnioAndTipoEvaluacionAndActivoTrueAndIdNot(
             Long estudianteId, Long cursoId, Integer cicloAnio,
             String tipoEvaluacion, Long id);
 
+    default boolean existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrueAndIdNot(
+            Long estudianteId,
+            Long cursoId,
+            Integer cicloAnio,
+            String tipoEvaluacion,
+            Long id) {
+        return existsByEstudiante_IdAndCurso_IdAndCicloAnioAndTipoEvaluacionAndActivoTrueAndIdNot(
+                estudianteId, cursoId, cicloAnio, tipoEvaluacion, id);
+    }
+
     @Query("""
             SELECT n FROM Nota n
-            WHERE (:estudianteId IS NULL OR n.estudianteId = :estudianteId)
-              AND (:cursoId IS NULL OR n.cursoId = :cursoId)
+            WHERE (:estudianteId IS NULL OR n.estudiante.id = :estudianteId)
+              AND (:cursoId IS NULL OR n.curso.id = :cursoId)
               AND (:cicloAnio IS NULL OR n.cicloAnio = :cicloAnio)
               AND (:tipoEvaluacion IS NULL OR n.tipoEvaluacion = :tipoEvaluacion)
               AND (:activo IS NULL OR n.activo = :activo)

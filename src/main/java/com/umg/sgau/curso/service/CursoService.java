@@ -17,7 +17,11 @@ public interface CursoService {
      * @param curso entidad con los datos del curso a crear
      * @return curso guardado
      */
-    Curso crear(Curso curso);
+    Curso crear(Curso curso, Long carreraId);
+
+    default Curso crear(Curso curso) {
+        return crear(curso, curso.getCarreraId());
+    }
 
     /**
      * Obtiene un curso por su identificador.
@@ -53,7 +57,11 @@ public interface CursoService {
      * @param curso entidad con los nuevos datos editables
      * @return curso actualizado
      */
-    Curso actualizar(Long id, Curso curso);
+    Curso actualizar(Long id, Curso curso, Long carreraId);
+
+    default Curso actualizar(Long id, Curso curso) {
+        return actualizar(id, curso, curso.getCarreraId());
+    }
 
     /**
      * Cambia el estado activo o inactivo de un curso.

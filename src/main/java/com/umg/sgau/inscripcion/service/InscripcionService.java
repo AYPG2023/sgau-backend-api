@@ -19,16 +19,22 @@ public interface InscripcionService {
      *
      * @param inscripcion datos de la inscripcion a crear
      * @return inscripcion creada con id, estado=ACTIVA, activo=true
-     * @throws InscripcionDuplicadaException si ya existe una activa identica (409)
      */
-    Inscripcion registrar(Inscripcion inscripcion);
+    Inscripcion registrar(Inscripcion inscripcion, Long estudianteId, Long carreraId, Long cursoId);
+
+    default Inscripcion registrar(Inscripcion inscripcion) {
+        return registrar(
+                inscripcion,
+                inscripcion.getEstudianteId(),
+                inscripcion.getCarreraId(),
+                inscripcion.getCursoId());
+    }
 
     /**
      * Busca una inscripcion por su ID.
      *
      * @param id identificador de la inscripcion
      * @return inscripcion encontrada
-     * @throws InscripcionNoEncontradaException si no existe (404)
      */
     Inscripcion obtenerPorId(Long id);
 
@@ -55,10 +61,12 @@ public interface InscripcionService {
      * @param id  identificador de la inscripcion
      * @param inscripcion nuevos valores para los campos editables
      * @return inscripcion actualizada
-     * @throws InscripcionNoEncontradaException si no existe (404)
-     * @throws InscripcionDuplicadaException si el cambio genera un duplicado activo (409)
      */
-    Inscripcion actualizar(Long id, Inscripcion inscripcion);
+    Inscripcion actualizar(Long id, Inscripcion inscripcion, Long carreraId, Long cursoId);
+
+    default Inscripcion actualizar(Long id, Inscripcion inscripcion) {
+        return actualizar(id, inscripcion, inscripcion.getCarreraId(), inscripcion.getCursoId());
+    }
 
     /**
      * Anula (soft-delete) una inscripcion: estado=ANULADA, activo=false.
@@ -67,7 +75,6 @@ public interface InscripcionService {
      * @param id  identificador de la inscripcion
      * @param motivo observacion del motivo de anulacion
      * @return inscripcion anulada
-     * @throws InscripcionNoEncontradaException si no existe (404)
      * @throws IllegalStateException si la inscripcion ya esta anulada (409)
      */
     Inscripcion anular(Long id, String motivo);

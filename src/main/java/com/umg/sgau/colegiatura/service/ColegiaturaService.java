@@ -11,8 +11,15 @@ import java.util.List;
 public interface ColegiaturaService {
 
     Colegiatura crear(
-            Colegiatura colegiatura
+            Colegiatura colegiatura,
+            Long estudianteId
     );
+
+    default Colegiatura crear(
+            Colegiatura colegiatura
+    ) {
+        return crear(colegiatura, colegiatura.getEstudianteId());
+    }
 
     Colegiatura obtenerPorId(
             Long id

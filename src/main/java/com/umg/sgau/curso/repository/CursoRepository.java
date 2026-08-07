@@ -19,26 +19,53 @@ public interface CursoRepository extends JpaRepository<Curso, Long> {
 
     boolean existsByCodigoAndIdNot(String codigo, Long id);
 
-    Page<Curso> findByCarreraId(Long carreraId, Pageable pageable);
+    Page<Curso> findByCarrera_Id(Long carreraId, Pageable pageable);
 
-    Page<Curso> findByDocenteId(Long docenteId, Pageable pageable);
+    default Page<Curso> findByCarreraId(Long carreraId, Pageable pageable) {
+        return findByCarrera_Id(carreraId, pageable);
+    }
 
-    List<Curso> findByDocenteId(Long docenteId);
+    Page<Curso> findByDocente_Id(Long docenteId, Pageable pageable);
+
+    default Page<Curso> findByDocenteId(Long docenteId, Pageable pageable) {
+        return findByDocente_Id(docenteId, pageable);
+    }
+
+    List<Curso> findByDocente_Id(Long docenteId);
+
+    default List<Curso> findByDocenteId(Long docenteId) {
+        return findByDocente_Id(docenteId);
+    }
 
     Page<Curso> findByCicloAnio(Integer cicloAnio, Pageable pageable);
 
     Page<Curso> findByActivo(Boolean activo, Pageable pageable);
 
-    boolean existsByNombreIgnoreCaseAndCarreraIdAndCicloAnioAndActivoTrue(
+    boolean existsByNombreIgnoreCaseAndCarrera_IdAndCicloAnioAndActivoTrue(
             String nombre,
             Long carreraId,
             Integer cicloAnio);
 
-    boolean existsByNombreIgnoreCaseAndCarreraIdAndCicloAnioAndActivoTrueAndIdNot(
+    default boolean existsByNombreIgnoreCaseAndCarreraIdAndCicloAnioAndActivoTrue(
+            String nombre,
+            Long carreraId,
+            Integer cicloAnio) {
+        return existsByNombreIgnoreCaseAndCarrera_IdAndCicloAnioAndActivoTrue(nombre, carreraId, cicloAnio);
+    }
+
+    boolean existsByNombreIgnoreCaseAndCarrera_IdAndCicloAnioAndActivoTrueAndIdNot(
             String nombre,
             Long carreraId,
             Integer cicloAnio,
             Long id);
+
+    default boolean existsByNombreIgnoreCaseAndCarreraIdAndCicloAnioAndActivoTrueAndIdNot(
+            String nombre,
+            Long carreraId,
+            Integer cicloAnio,
+            Long id) {
+        return existsByNombreIgnoreCaseAndCarrera_IdAndCicloAnioAndActivoTrueAndIdNot(nombre, carreraId, cicloAnio, id);
+    }
 
     /*
     * Busca cursos aplicando filtros opcionales por texto, carrera,
@@ -57,11 +84,11 @@ public interface CursoRepository extends JpaRepository<Curso, Long> {
             )
             AND (
                 :carreraId IS NULL
-                OR c.carreraId = :carreraId
+                OR c.carrera.id = :carreraId
             )
             AND (
                 :docenteId IS NULL
-                OR c.docenteId = :docenteId
+                OR c.docente.id = :docenteId
             )
             AND (
                 :cicloAnio IS NULL

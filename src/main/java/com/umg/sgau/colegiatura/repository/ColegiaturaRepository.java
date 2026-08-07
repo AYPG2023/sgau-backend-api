@@ -13,30 +13,59 @@ import java.util.List;
 public interface ColegiaturaRepository
         extends JpaRepository<Colegiatura, Long> {
 
-    Page<Colegiatura> findByEstudianteId(
+    Page<Colegiatura> findByEstudiante_Id(
             Long estudianteId,
             Pageable pageable
     );
 
-    List<Colegiatura> findByEstudianteIdAndActivoTrueOrderByCicloAnioDescFechaEmisionDesc(
+    default Page<Colegiatura> findByEstudianteId(Long estudianteId, Pageable pageable) {
+        return findByEstudiante_Id(estudianteId, pageable);
+    }
+
+    List<Colegiatura> findByEstudiante_IdAndActivoTrueOrderByCicloAnioDescFechaEmisionDesc(
             Long estudianteId
     );
 
-    Page<Colegiatura> findByEstudianteIdAndActivoTrueOrderByCicloAnioDescFechaEmisionDesc(
+    default List<Colegiatura> findByEstudianteIdAndActivoTrueOrderByCicloAnioDescFechaEmisionDesc(Long estudianteId) {
+        return findByEstudiante_IdAndActivoTrueOrderByCicloAnioDescFechaEmisionDesc(estudianteId);
+    }
+
+    Page<Colegiatura> findByEstudiante_IdAndActivoTrueOrderByCicloAnioDescFechaEmisionDesc(
             Long estudianteId,
             Pageable pageable
     );
 
-    List<Colegiatura> findByEstudianteIdAndActivoTrueAndSaldoPendienteGreaterThanOrderByCicloAnioDescFechaEmisionDesc(
+    default Page<Colegiatura> findByEstudianteIdAndActivoTrueOrderByCicloAnioDescFechaEmisionDesc(
+            Long estudianteId,
+            Pageable pageable) {
+        return findByEstudiante_IdAndActivoTrueOrderByCicloAnioDescFechaEmisionDesc(estudianteId, pageable);
+    }
+
+    List<Colegiatura> findByEstudiante_IdAndActivoTrueAndSaldoPendienteGreaterThanOrderByCicloAnioDescFechaEmisionDesc(
             Long estudianteId,
             BigDecimal saldoPendiente
     );
 
-    Page<Colegiatura> findByEstudianteIdAndActivoTrueAndSaldoPendienteGreaterThanOrderByCicloAnioDescFechaEmisionDesc(
+    default List<Colegiatura> findByEstudianteIdAndActivoTrueAndSaldoPendienteGreaterThanOrderByCicloAnioDescFechaEmisionDesc(
+            Long estudianteId,
+            BigDecimal saldoPendiente) {
+        return findByEstudiante_IdAndActivoTrueAndSaldoPendienteGreaterThanOrderByCicloAnioDescFechaEmisionDesc(
+                estudianteId, saldoPendiente);
+    }
+
+    Page<Colegiatura> findByEstudiante_IdAndActivoTrueAndSaldoPendienteGreaterThanOrderByCicloAnioDescFechaEmisionDesc(
             Long estudianteId,
             BigDecimal saldoPendiente,
             Pageable pageable
     );
+
+    default Page<Colegiatura> findByEstudianteIdAndActivoTrueAndSaldoPendienteGreaterThanOrderByCicloAnioDescFechaEmisionDesc(
+            Long estudianteId,
+            BigDecimal saldoPendiente,
+            Pageable pageable) {
+        return findByEstudiante_IdAndActivoTrueAndSaldoPendienteGreaterThanOrderByCicloAnioDescFechaEmisionDesc(
+                estudianteId, saldoPendiente, pageable);
+    }
 
     Page<Colegiatura> findByCicloAnio(
             Integer cicloAnio,
@@ -55,18 +84,34 @@ public interface ColegiaturaRepository
 
     List<Colegiatura> findByActivoTrue();
 
-    boolean existsByEstudianteIdAndCicloAnioAndConceptoAndActivoTrue(
+    boolean existsByEstudiante_IdAndCicloAnioAndConceptoAndActivoTrue(
             Long estudianteId,
             Integer cicloAnio,
             String concepto
     );
 
-    boolean existsByEstudianteIdAndCicloAnioAndConceptoAndActivoTrueAndIdNot(
+    default boolean existsByEstudianteIdAndCicloAnioAndConceptoAndActivoTrue(
+            Long estudianteId,
+            Integer cicloAnio,
+            String concepto) {
+        return existsByEstudiante_IdAndCicloAnioAndConceptoAndActivoTrue(estudianteId, cicloAnio, concepto);
+    }
+
+    boolean existsByEstudiante_IdAndCicloAnioAndConceptoAndActivoTrueAndIdNot(
             Long estudianteId,
             Integer cicloAnio,
             String concepto,
             Long id
     );
+
+    default boolean existsByEstudianteIdAndCicloAnioAndConceptoAndActivoTrueAndIdNot(
+            Long estudianteId,
+            Integer cicloAnio,
+            String concepto,
+            Long id) {
+        return existsByEstudiante_IdAndCicloAnioAndConceptoAndActivoTrueAndIdNot(
+                estudianteId, cicloAnio, concepto, id);
+    }
 
     @Query("""
         SELECT c
@@ -74,7 +119,7 @@ public interface ColegiaturaRepository
         WHERE
             (
                 :estudianteId IS NULL
-                OR c.estudianteId = :estudianteId
+                OR c.estudiante.id = :estudianteId
             )
         AND
             (

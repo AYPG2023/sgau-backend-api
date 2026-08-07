@@ -48,9 +48,10 @@ public class NotaServiceImpl implements NotaService {
     }
 
     @Override
-    public Nota crear(Nota nota) {
+    public Nota crear(Nota nota, Long estudianteId, Long cursoId) {
         validarDatosEditables(nota);
         nota.setTipoEvaluacion(normalizarTipoEvaluacion(nota.getTipoEvaluacion()));
+        asignarReferencias(nota, estudianteId, cursoId);
         validarReferenciasActivas(nota);
         validarInscripcionActiva(nota);
         validarDuplicadoActivo(nota, null);
@@ -186,16 +187,29 @@ public class NotaServiceImpl implements NotaService {
         return tipoEvaluacion.trim().toUpperCase(Locale.ROOT);
     }
 
-    private void validarReferenciasActivas(Nota nota) {
-        Estudiante estudiante = validarEstudianteExistente(nota.getEstudianteId());
+    private void asignarReferencias(Nota nota, Long estudianteId, Long cursoId) {
+        Estudiante estudiante = validarEstudianteExistente(estudianteId);
         if (!Boolean.TRUE.equals(estudiante.getActivo())) {
-            throw new EstudianteInactivoParaNotaException(nota.getEstudianteId());
+            throw new EstudianteInactivoParaNotaException(estudianteId);
         }
+        nota.setEstudiante(estudiante);
+        nota.setCurso(validarCursoExistente(cursoId));
+    }
 
-        Curso curso = validarCursoExistente(nota.getCursoId());
-        if (!Boolean.TRUE.equals(curso.getActivo())) {
-            throw new CursoInactivoParaNotaException(nota.getCursoId());
+    private void validarReferenciasActivas(Nota nota) {
+        Long estudianteId = getEstudianteId(nota);
+        Estudiante estudiante = validarEstudianteExistente(estudianteId);
+        if (!Boolean.TRUE.equals(estudiante.getActivo())) {
+            throw new EstudianteInactivoParaNotaException(estudianteId);
         }
+        nota.setEstudiante(estudiante);
+
+        Long cursoId = getCursoId(nota);
+        Curso curso = validarCursoExistente(cursoId);
+        if (!Boolean.TRUE.equals(curso.getActivo())) {
+            throw new CursoInactivoParaNotaException(cursoId);
+        }
+        nota.setCurso(curso);
     }
 
     private Estudiante validarEstudianteExistente(Long estudianteId) {
@@ -224,12 +238,12 @@ public class NotaServiceImpl implements NotaService {
 
     private void validarInscripcionActiva(Nota nota) {
         if (!inscripcionService.existeInscripcionActiva(
-                nota.getEstudianteId(),
-                nota.getCursoId(),
+                getEstudianteId(nota),
+                getCursoId(nota),
                 nota.getCicloAnio())) {
             throw new InscripcionActivaNoEncontradaException(
-                    nota.getEstudianteId(),
-                    nota.getCursoId(),
+                    getEstudianteId(nota),
+                    getCursoId(nota),
                     nota.getCicloAnio());
         }
     }
@@ -237,13 +251,21 @@ public class NotaServiceImpl implements NotaService {
     private void validarDuplicadoActivo(Nota nota, Long idExcluir) {
         boolean duplicada = idExcluir == null
                 ? notaRepository.existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrue(
-                nota.getEstudianteId(), nota.getCursoId(), nota.getCicloAnio(), nota.getTipoEvaluacion())
+                getEstudianteId(nota), getCursoId(nota), nota.getCicloAnio(), nota.getTipoEvaluacion())
                 : notaRepository.existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrueAndIdNot(
-                nota.getEstudianteId(), nota.getCursoId(), nota.getCicloAnio(), nota.getTipoEvaluacion(), idExcluir);
+                getEstudianteId(nota), getCursoId(nota), nota.getCicloAnio(), nota.getTipoEvaluacion(), idExcluir);
 
         if (duplicada) {
             throw new NotaDuplicadaException(
                     "Ya existe una nota activa para el mismo estudiante, curso, ciclo y tipo de evaluacion.");
         }
+    }
+
+    private Long getEstudianteId(Nota nota) {
+        return nota.getEstudiante() == null ? null : nota.getEstudiante().getId();
+    }
+
+    private Long getCursoId(Nota nota) {
+        return nota.getCurso() == null ? null : nota.getCurso().getId();
     }
 }

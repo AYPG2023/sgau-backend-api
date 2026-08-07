@@ -17,7 +17,6 @@ public final class ColegiaturaMapper {
 
         Colegiatura colegiatura = new Colegiatura();
 
-        colegiatura.setEstudianteId(dto.getEstudianteId());
         colegiatura.setCicloAnio(dto.getCicloAnio());
         colegiatura.setConcepto(dto.getConcepto());
         colegiatura.setMontoTotal(dto.getMontoTotal());
@@ -33,7 +32,7 @@ public final class ColegiaturaMapper {
 
         return ColegiaturaResponseDTO.builder()
                 .id(colegiatura.getId())
-                .estudianteId(colegiatura.getEstudianteId())
+                .estudianteId(colegiatura.getEstudiante() != null ? colegiatura.getEstudiante().getId() : null)
                 .cicloAnio(colegiatura.getCicloAnio())
                 .concepto(colegiatura.getConcepto())
                 .montoTotal(colegiatura.getMontoTotal())

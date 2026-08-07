@@ -15,8 +15,6 @@ public final class NotaMapper {
 
     public static Nota aEntidad(NotaCreateRequestDTO dto) {
         Nota nota = new Nota();
-        nota.setEstudianteId(dto.getEstudianteId());
-        nota.setCursoId(dto.getCursoId());
         nota.setCicloAnio(dto.getCicloAnio());
         nota.setTipoEvaluacion(dto.getTipoEvaluacion());
         nota.setCalificacion(dto.getCalificacion());
@@ -27,8 +25,8 @@ public final class NotaMapper {
     public static NotaResponseDTO aResponseDTO(Nota nota) {
         return NotaResponseDTO.builder()
                 .id(nota.getId())
-                .estudianteId(nota.getEstudianteId())
-                .cursoId(nota.getCursoId())
+                .estudianteId(nota.getEstudiante() != null ? nota.getEstudiante().getId() : null)
+                .cursoId(nota.getCurso() != null ? nota.getCurso().getId() : null)
                 .cicloAnio(nota.getCicloAnio())
                 .tipoEvaluacion(nota.getTipoEvaluacion())
                 .calificacion(nota.getCalificacion())
