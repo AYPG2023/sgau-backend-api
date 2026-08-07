@@ -2,6 +2,8 @@ package com.umg.sgau.usuario.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -42,6 +44,10 @@ public class Usuario {
     @Column(nullable = false)
     private Boolean activo;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    private Rol rol;
+
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;
 
@@ -50,6 +56,9 @@ public class Usuario {
         this.fechaCreacion = LocalDateTime.now();
         if (this.activo == null) {
             this.activo = true;
+        }
+        if (this.rol == null) {
+            this.rol = Rol.ESTUDIANTE;
         }
     }
 }

@@ -1,4 +1,4 @@
-package com.umg.sgau.usuario.dto;
+package com.umg.sgau.auth.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -6,21 +6,19 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UsuarioResponseDTO {
+public class LoginResponseDTO {
 
-    private Long id;
+    private String accessToken;
+    private String tokenType;
+    private Long expiresIn;
+    private Long usuarioId;
     private String username;
-    private String email;
     private String nombre;
     private String apellido;
     private String rol;
-    private Boolean activo;
-    private LocalDateTime fechaCreacion;
 }
