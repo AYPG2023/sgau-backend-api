@@ -61,7 +61,7 @@ class AuthServiceTest {
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
-        when(usuarioRepository.findWithRolesAndPermisosByUsernameIgnoreCaseOrEmailIgnoreCase("admin", "admin"))
+        when(usuarioRepository.findWithRolesAndPermisosByUsernameIgnoreCase("admin"))
                 .thenReturn(Optional.of(usuario));
         when(jwtService.generarToken(usuario, principal)).thenReturn("jwt-token");
         when(jwtService.getExpirationSeconds()).thenReturn(3600L);
@@ -100,7 +100,7 @@ class AuthServiceTest {
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
-        when(usuarioRepository.findWithRolesAndPermisosByUsernameIgnoreCaseOrEmailIgnoreCase("admin", "admin"))
+        when(usuarioRepository.findWithRolesAndPermisosByUsernameIgnoreCase("admin"))
                 .thenReturn(Optional.of(usuario("admin", false)));
 
         assertThatThrownBy(() -> authService.login(request))
@@ -110,9 +110,30 @@ class AuthServiceTest {
         verify(jwtService, never()).generarToken(any(Usuario.class), any(UserDetails.class));
     }
 
+    @Test
+    void loginConUsuarioInexistenteRetornaCredencialesInvalidas() {
+        LoginRequestDTO request = loginRequest();
+        UserDetails principal = userDetails("admin");
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                principal,
+                null,
+                principal.getAuthorities());
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+        when(usuarioRepository.findWithRolesAndPermisosByUsernameIgnoreCase("admin"))
+                .thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> authService.login(request))
+                .isInstanceOf(BadCredentialsException.class)
+                .hasMessageContaining("Credenciales invalidas");
+
+        verify(jwtService, never()).generarToken(any(Usuario.class), any(UserDetails.class));
+    }
+
     private LoginRequestDTO loginRequest() {
         LoginRequestDTO request = new LoginRequestDTO();
-        request.setIdentificador("admin");
+        request.setUsername("admin");
         request.setPassword("secret");
         return request;
     }

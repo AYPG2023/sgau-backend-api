@@ -26,6 +26,9 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findWithRolesAndPermisosByUsernameIgnoreCaseOrEmailIgnoreCase(String username, String email);
 
     @EntityGraph(attributePaths = {"roles", "roles.permisos"})
+    Optional<Usuario> findWithRolesAndPermisosByUsernameIgnoreCase(String username);
+
+    @EntityGraph(attributePaths = {"roles", "roles.permisos"})
     Optional<Usuario> findWithRolesAndPermisosByUsername(String username);
 
     @EntityGraph(attributePaths = "roles")

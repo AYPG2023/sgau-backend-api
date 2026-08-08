@@ -41,7 +41,7 @@ public class AuthService {
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.getIdentificador(),
+                            request.getUsername(),
                             request.getPassword()));
 
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
@@ -76,9 +76,9 @@ public class AuthService {
                 .build();
     }
 
-    private Usuario buscarUsuarioActivo(String identificador) {
+    private Usuario buscarUsuarioActivo(String username) {
         Usuario usuario = usuarioRepository
-                .findWithRolesAndPermisosByUsernameIgnoreCaseOrEmailIgnoreCase(identificador, identificador)
+                .findWithRolesAndPermisosByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Credenciales invalidas"));
 
         if (!Boolean.TRUE.equals(usuario.getActivo())) {

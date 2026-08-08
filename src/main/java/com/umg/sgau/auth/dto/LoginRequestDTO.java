@@ -14,8 +14,8 @@ import lombok.Setter;
 @Builder
 public class LoginRequestDTO {
 
-    @NotBlank(message = "El usuario o correo es obligatorio")
-    private String identificador;
+    @NotBlank(message = "El username es obligatorio")
+    private String username;
 
     @NotBlank(message = "La contrasena es obligatoria")
     private String password;
