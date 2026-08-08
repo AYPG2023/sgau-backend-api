@@ -47,6 +47,17 @@ public class AuthExceptionHandler {
                 request);
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> manejarIllegalArgumentException(
+            IllegalArgumentException exception,
+            HttpServletRequest request) {
+        HttpStatus status = exception.getMessage() != null && exception.getMessage().startsWith("Ya existe")
+                ? HttpStatus.CONFLICT
+                : HttpStatus.BAD_REQUEST;
+
+        return construirRespuesta(status, exception.getMessage(), request);
+    }
+
     private ResponseEntity<Map<String, Object>> construirRespuesta(
             HttpStatus status,
             String message,

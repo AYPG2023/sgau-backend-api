@@ -9,16 +9,20 @@ import static org.mockito.Mockito.when;
 
 import com.umg.sgau.auth.dto.LoginRequestDTO;
 import com.umg.sgau.auth.dto.LoginResponseDTO;
+import com.umg.sgau.auth.dto.RegisterRequestDTO;
 import com.umg.sgau.config.JwtService;
+import com.umg.sgau.usuario.dto.UsuarioResponseDTO;
 import com.umg.sgau.rol.entity.Rol;
 import com.umg.sgau.usuario.entity.Usuario;
 import com.umg.sgau.usuario.repository.UsuarioRepository;
+import com.umg.sgau.usuario.service.UsuarioService;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -40,13 +44,16 @@ class AuthServiceTest {
     private UsuarioRepository usuarioRepository;
 
     @Mock
+    private UsuarioService usuarioService;
+
+    @Mock
     private JwtService jwtService;
 
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(authenticationManager, usuarioRepository, jwtService);
+        authService = new AuthService(authenticationManager, usuarioRepository, usuarioService, jwtService);
     }
 
     @Test
@@ -131,10 +138,42 @@ class AuthServiceTest {
         verify(jwtService, never()).generarToken(any(Usuario.class), any(UserDetails.class));
     }
 
+    @Test
+    void registrarCreaUsuarioActivoSinRoles() {
+        RegisterRequestDTO request = registerRequest();
+        Usuario creado = usuario("nuevo", true);
+        creado.setRoles(new HashSet<>());
+
+        when(usuarioService.crear(any(Usuario.class))).thenReturn(creado);
+
+        UsuarioResponseDTO response = authService.registrar(request);
+
+        ArgumentCaptor<Usuario> usuarioCaptor = ArgumentCaptor.forClass(Usuario.class);
+        verify(usuarioService).crear(usuarioCaptor.capture());
+        Usuario usuarioParaCrear = usuarioCaptor.getValue();
+
+        assertThat(usuarioParaCrear.getUsername()).isEqualTo("nuevo");
+        assertThat(usuarioParaCrear.getPassword()).isEqualTo("Usuario123*");
+        assertThat(usuarioParaCrear.getActivo()).isTrue();
+        assertThat(usuarioParaCrear.getRoles()).isEmpty();
+        assertThat(response.getUsername()).isEqualTo("nuevo");
+        assertThat(response.getRoles()).isEmpty();
+    }
+
     private LoginRequestDTO loginRequest() {
         LoginRequestDTO request = new LoginRequestDTO();
         request.setUsername("admin");
         request.setPassword("secret");
+        return request;
+    }
+
+    private RegisterRequestDTO registerRequest() {
+        RegisterRequestDTO request = new RegisterRequestDTO();
+        request.setUsername("nuevo");
+        request.setPassword("Usuario123*");
+        request.setEmail("nuevo@sgau.test");
+        request.setNombre("Nuevo");
+        request.setApellido("Usuario");
         return request;
     }
 

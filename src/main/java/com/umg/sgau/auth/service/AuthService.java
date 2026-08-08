@@ -3,10 +3,14 @@ package com.umg.sgau.auth.service;
 import com.umg.sgau.auth.dto.LoginRequestDTO;
 import com.umg.sgau.auth.dto.LoginResponseDTO;
 import com.umg.sgau.auth.dto.PerfilResponseDTO;
+import com.umg.sgau.auth.dto.RegisterRequestDTO;
 import com.umg.sgau.config.JwtService;
 import com.umg.sgau.rol.entity.Rol;
+import com.umg.sgau.usuario.dto.UsuarioResponseDTO;
 import com.umg.sgau.usuario.entity.Usuario;
+import com.umg.sgau.usuario.mapper.UsuarioMapper;
 import com.umg.sgau.usuario.repository.UsuarioRepository;
+import com.umg.sgau.usuario.service.UsuarioService;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -26,14 +30,17 @@ public class AuthService {
 
     private final AuthenticationManager authenticationManager;
     private final UsuarioRepository usuarioRepository;
+    private final UsuarioService usuarioService;
     private final JwtService jwtService;
 
     public AuthService(
             AuthenticationManager authenticationManager,
             UsuarioRepository usuarioRepository,
+            UsuarioService usuarioService,
             JwtService jwtService) {
         this.authenticationManager = authenticationManager;
         this.usuarioRepository = usuarioRepository;
+        this.usuarioService = usuarioService;
         this.jwtService = jwtService;
     }
 
@@ -74,6 +81,18 @@ public class AuthService {
                 .roles(obtenerCodigosRolesActivos(usuario))
                 .activo(usuario.getActivo())
                 .build();
+    }
+
+    public UsuarioResponseDTO registrar(RegisterRequestDTO request) {
+        Usuario usuario = new Usuario();
+        usuario.setUsername(request.getUsername());
+        usuario.setPassword(request.getPassword());
+        usuario.setEmail(request.getEmail());
+        usuario.setNombre(request.getNombre());
+        usuario.setApellido(request.getApellido());
+        usuario.setActivo(true);
+
+        return UsuarioMapper.aResponseDTO(usuarioService.crear(usuario));
     }
 
     private Usuario buscarUsuarioActivo(String username) {

@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.umg.sgau.auth.dto.LoginResponseDTO;
 import com.umg.sgau.auth.service.AuthService;
+import com.umg.sgau.usuario.dto.UsuarioResponseDTO;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -127,5 +128,74 @@ class AuthControllerTest {
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.status").value(400))
                 .andExpect(jsonPath("$.message", containsString("username")));
+    }
+
+    @Test
+    void registerConDatosValidosRetorna201SinRoles() throws Exception {
+        UsuarioResponseDTO response = new UsuarioResponseDTO();
+        response.setId(2L);
+        response.setUsername("nuevo");
+        response.setEmail("nuevo@sgau.test");
+        response.setNombre("Nuevo");
+        response.setApellido("Usuario");
+        response.setActivo(true);
+        response.setRoles(Set.of());
+
+        when(authService.registrar(any())).thenReturn(response);
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "nuevo",
+                                  "password": "Usuario123*",
+                                  "email": "nuevo@sgau.test",
+                                  "nombre": "Nuevo",
+                                  "apellido": "Usuario"
+                                }
+                                """))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").value(2L))
+                .andExpect(jsonPath("$.username").value("nuevo"))
+                .andExpect(jsonPath("$.roles").isEmpty());
+    }
+
+    @Test
+    void registerConUsernameDuplicadoRetorna409() throws Exception {
+        when(authService.registrar(any()))
+                .thenThrow(new IllegalArgumentException("Ya existe un usuario con ese username"));
+
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "admin",
+                                  "password": "Usuario123*",
+                                  "email": "admin@sgau.test",
+                                  "nombre": "Admin",
+                                  "apellido": "Sistema"
+                                }
+                                """))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message").value("Ya existe un usuario con ese username"));
+    }
+
+    @Test
+    void registerConPasswordCortaRetorna400() throws Exception {
+        mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "username": "nuevo",
+                                  "password": "123",
+                                  "email": "nuevo@sgau.test",
+                                  "nombre": "Nuevo",
+                                  "apellido": "Usuario"
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message", containsString("contrasena")));
     }
 }
