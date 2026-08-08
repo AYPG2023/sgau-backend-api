@@ -23,9 +23,9 @@ public class CustomUserDetailsService implements UserDetailsService {
     }
 
     @Override
-    public UserDetails loadUserByUsername(String identificador) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         Usuario usuario = usuarioRepository
-                .findWithRolesAndPermisosByUsernameIgnoreCaseOrEmailIgnoreCase(identificador, identificador)
+                .findWithRolesAndPermisosByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Credenciales invalidas"));
 
         if (!Boolean.TRUE.equals(usuario.getActivo())) {

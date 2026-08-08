@@ -302,7 +302,7 @@ GET  /api/auth/me
 
 Flujo:
 
-1. El cliente envia `identificador` y `password` a `/api/auth/login`.
+1. El cliente envia `username` y `password` a `/api/auth/login`.
 2. Spring Security autentica contra `CustomUserDetailsService`.
 3. `AuthService` genera un token con `JwtService`.
 4. El token incluye `userId`, `email` y `authorities`.
@@ -316,7 +316,7 @@ Ejemplo de login:
 
 ```json
 {
-  "identificador": "admin",
+  "username": "admin",
   "password": "password-plano"
 }
 ```
