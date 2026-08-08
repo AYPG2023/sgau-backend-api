@@ -35,7 +35,14 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Override
     @Transactional
     public Usuario crear(Usuario usuario) {
+        validarDuplicados(usuario);
         usuario.setPassword(cifrarSiHaceFalta(usuario.getPassword()));
+        if (usuario.getActivo() == null) {
+            usuario.setActivo(true);
+        }
+        if (usuario.getRoles() == null) {
+            usuario.setRoles(new HashSet<>());
+        }
         return usuarioRepository.save(usuario);
     }
 
@@ -56,6 +63,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional
     public Usuario actualizar(Long id, Usuario usuario) {
         Usuario usuarioActual = obtenerPorId(id);
+        validarDuplicadosAlActualizar(id, usuario);
 
         usuarioActual.setUsername(usuario.getUsername());
         usuarioActual.setEmail(usuario.getEmail());
@@ -140,5 +148,27 @@ public class UsuarioServiceImpl implements UsuarioService {
             return password;
         }
         return passwordEncoder.encode(password);
+    }
+
+    private void validarDuplicados(Usuario usuario) {
+        if (usuarioRepository.existsByUsername(usuario.getUsername())) {
+            throw new IllegalArgumentException("Ya existe un usuario con ese username");
+        }
+        if (usuarioRepository.existsByEmail(usuario.getEmail())) {
+            throw new IllegalArgumentException("Ya existe un usuario con ese email");
+        }
+    }
+
+    private void validarDuplicadosAlActualizar(Long usuarioId, Usuario usuario) {
+        usuarioRepository.findByUsername(usuario.getUsername())
+                .filter(existente -> !existente.getId().equals(usuarioId))
+                .ifPresent(existente -> {
+                    throw new IllegalArgumentException("Ya existe un usuario con ese username");
+                });
+        usuarioRepository.findByEmail(usuario.getEmail())
+                .filter(existente -> !existente.getId().equals(usuarioId))
+                .ifPresent(existente -> {
+                    throw new IllegalArgumentException("Ya existe un usuario con ese email");
+                });
     }
 }

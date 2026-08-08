@@ -296,20 +296,36 @@ JWT esta implementado en el proyecto actual.
 Endpoints:
 
 ```http
+POST /api/auth/register
 POST /api/auth/login
 GET  /api/auth/me
 ```
 
 Flujo:
 
-1. El cliente envia `username` y `password` a `/api/auth/login`.
-2. Spring Security autentica contra `CustomUserDetailsService`.
-3. `AuthService` genera un token con `JwtService`.
-4. El token incluye `userId`, `email` y `authorities`.
-5. Las siguientes peticiones usan el header:
+1. El cliente puede crear una cuenta inicial en `/api/auth/register`.
+2. El usuario queda activo, sin roles y sin permisos.
+3. Un administrador asigna roles mediante `/api/usuarios/{id}/roles`.
+4. El cliente envia `username` y `password` a `/api/auth/login`.
+5. Spring Security autentica contra `CustomUserDetailsService`.
+6. `AuthService` genera un token con `JwtService`.
+7. El token incluye `userId`, `email` y `authorities`.
+8. Las siguientes peticiones usan el header:
 
 ```http
 Authorization: Bearer <token>
+```
+
+Ejemplo de registro publico:
+
+```json
+{
+  "username": "nuevo.usuario",
+  "password": "Usuario123*",
+  "email": "nuevo.usuario@sgau.local",
+  "nombre": "Nuevo",
+  "apellido": "Usuario"
+}
 ```
 
 Ejemplo de login:
@@ -342,6 +358,7 @@ Respuesta:
 
 | Metodo | Ruta | Uso |
 |--------|------|-----|
+| POST | `/api/auth/register` | Registrar usuario sin roles |
 | POST | `/api/auth/login` | Iniciar sesion y obtener JWT |
 | GET | `/api/auth/me` | Obtener perfil autenticado |
 
