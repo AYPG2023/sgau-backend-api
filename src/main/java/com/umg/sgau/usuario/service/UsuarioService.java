@@ -1,7 +1,9 @@
 package com.umg.sgau.usuario.service;
 
+import com.umg.sgau.rol.entity.Rol;
 import com.umg.sgau.usuario.entity.Usuario;
 import java.util.List;
+import java.util.Set;
 
 public interface UsuarioService {
 
@@ -19,4 +21,10 @@ public interface UsuarioService {
 
     // Eliminar usuario por ID
     void eliminar(Long id);
+
+    Usuario asignarRoles(Long usuarioId, Set<Long> rolIds);
+
+    Set<Rol> obtenerRoles(Long usuarioId);
+
+    Set<String> obtenerAutoridades(String username);
 }

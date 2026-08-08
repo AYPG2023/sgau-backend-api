@@ -1,14 +1,21 @@
 package com.umg.sgau.carrera.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.umg.sgau.curso.entity.Curso;
+import com.umg.sgau.inscripcion.entity.Inscripcion;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,6 +49,16 @@ public class Carrera {
 
     @Column(nullable = false)
     private Boolean activo;
+
+    @OneToMany(mappedBy = "carrera", fetch = FetchType.LAZY)
+    @JsonIgnore
+    @Builder.Default
+    private List<Curso> cursos = new ArrayList<>();
+
+    @OneToMany(mappedBy = "carrera", fetch = FetchType.LAZY)
+    @JsonIgnore
+    @Builder.Default
+    private List<Inscripcion> inscripciones = new ArrayList<>();
 
     @Column(nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;

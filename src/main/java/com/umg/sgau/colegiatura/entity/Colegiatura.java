@@ -1,5 +1,6 @@
 package com.umg.sgau.colegiatura.entity;
 
+import com.umg.sgau.estudiante.entity.Estudiante;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,10 +12,10 @@ import java.time.LocalDateTime;
 @Table(
         name = "colegiaturas",
         indexes = {
-                @Index(name = "idx_colegiatura_estudiante", columnList = "estudianteId"),
+                @Index(name = "idx_colegiatura_estudiante", columnList = "estudiante_id"),
                 @Index(name = "idx_colegiatura_estado", columnList = "estado"),
                 @Index(name = "idx_colegiatura_activo", columnList = "activo"),
-                @Index(name = "idx_colegiatura_ciclo", columnList = "cicloAnio")
+                @Index(name = "idx_colegiatura_ciclo", columnList = "ciclo_anio")
         }
 )
 @Getter
@@ -28,10 +29,11 @@ public class Colegiatura {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
-    private Long estudianteId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "estudiante_id", nullable = false)
+    private Estudiante estudiante;
 
-    @Column(nullable = false)
+    @Column(name = "ciclo_anio", nullable = false)
     private Integer cicloAnio;
 
     @Column(nullable = false, length = 120)
@@ -95,4 +97,18 @@ public class Colegiatura {
         this.fechaActualizacion = LocalDateTime.now();
     }
 
+    public Long getEstudianteId() {
+        return estudiante == null ? null : estudiante.getId();
+    }
+
+    public void setEstudianteId(Long estudianteId) {
+        this.estudiante = estudianteId == null ? null : Estudiante.builder().id(estudianteId).build();
+    }
+
+    public static class ColegiaturaBuilder {
+        public ColegiaturaBuilder estudianteId(Long estudianteId) {
+            this.estudiante = estudianteId == null ? null : Estudiante.builder().id(estudianteId).build();
+            return this;
+        }
+    }
 }

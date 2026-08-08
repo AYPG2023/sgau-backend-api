@@ -41,7 +41,7 @@ public class ColegiaturaController {
     public ResponseEntity<ColegiaturaResponseDTO> crear(
             @Valid @RequestBody ColegiaturaCreateRequestDTO request) {
         Colegiatura colegiatura = ColegiaturaMapper.toEntity(request);
-        Colegiatura creada = colegiaturaService.crear(colegiatura);
+        Colegiatura creada = colegiaturaService.crear(colegiatura, request.getEstudianteId());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ColegiaturaMapper.toResponseDTO(creada));

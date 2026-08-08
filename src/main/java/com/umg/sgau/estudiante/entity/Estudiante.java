@@ -1,9 +1,15 @@
 package com.umg.sgau.estudiante.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.umg.sgau.colegiatura.entity.Colegiatura;
+import com.umg.sgau.inscripcion.entity.Inscripcion;
+import com.umg.sgau.nota.entity.Nota;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.time.*;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Entity
@@ -53,6 +59,21 @@ public class Estudiante {
     @Builder.Default
     @Column(nullable = false)
     private Boolean activo = true;
+
+    @OneToMany(mappedBy = "estudiante", fetch = FetchType.LAZY)
+    @JsonIgnore
+    @Builder.Default
+    private List<Inscripcion> inscripciones = new ArrayList<>();
+
+    @OneToMany(mappedBy = "estudiante", fetch = FetchType.LAZY)
+    @JsonIgnore
+    @Builder.Default
+    private List<Colegiatura> colegiaturas = new ArrayList<>();
+
+    @OneToMany(mappedBy = "estudiante", fetch = FetchType.LAZY)
+    @JsonIgnore
+    @Builder.Default
+    private List<Nota> notas = new ArrayList<>();
 
     @Column(name = "fecha_creacion", nullable = false, updatable = false)
     private LocalDateTime fechaCreacion;

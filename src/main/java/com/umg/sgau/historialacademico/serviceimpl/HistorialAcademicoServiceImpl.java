@@ -78,9 +78,9 @@ public class HistorialAcademicoServiceImpl implements HistorialAcademicoService 
         Map<Long, Curso> cursosPorId = cargarCursos(inscripciones);
 
         List<HistorialCursoResponseDTO> detalleCursos = inscripciones.stream()
-                .filter(inscripcion -> inscripcion.getCursoId() != null)
+                .filter(inscripcion -> getCursoId(inscripcion) != null)
                 .collect(Collectors.toMap(
-                        inscripcion -> new CursoCicloKey(inscripcion.getCursoId(), inscripcion.getCicloAnio()),
+                        inscripcion -> new CursoCicloKey(getCursoId(inscripcion), inscripcion.getCicloAnio()),
                         Function.identity(),
                         this::seleccionarInscripcionRepresentativa,
                         LinkedHashMap::new))
@@ -88,9 +88,9 @@ public class HistorialAcademicoServiceImpl implements HistorialAcademicoService 
                 .stream()
                 .map(inscripcion -> construirDetalleCurso(
                         inscripcion,
-                        cursosPorId.get(inscripcion.getCursoId()),
+                        cursosPorId.get(getCursoId(inscripcion)),
                         notasPorCursoYCiclo.getOrDefault(
-                                new CursoCicloKey(inscripcion.getCursoId(), inscripcion.getCicloAnio()),
+                                new CursoCicloKey(getCursoId(inscripcion), inscripcion.getCicloAnio()),
                                 List.of())))
                 .sorted(Comparator
                         .comparing(HistorialCursoResponseDTO::getCicloAnio, Comparator.nullsLast(Comparator.reverseOrder()))
@@ -118,16 +118,16 @@ public class HistorialAcademicoServiceImpl implements HistorialAcademicoService 
 
     private Map<CursoCicloKey, List<Nota>> agruparNotasPorCursoYCiclo(List<Nota> notasActivas) {
         return notasActivas.stream()
-                .filter(nota -> nota.getCursoId() != null)
+                .filter(nota -> getCursoId(nota) != null)
                 .filter(nota -> nota.getCicloAnio() != null)
-                .collect(Collectors.groupingBy(nota -> new CursoCicloKey(nota.getCursoId(), nota.getCicloAnio())));
+                .collect(Collectors.groupingBy(nota -> new CursoCicloKey(getCursoId(nota), nota.getCicloAnio())));
     }
 
     private Map<Long, Curso> cargarCursos(List<Inscripcion> inscripciones) {
         Map<Long, Curso> cursos = new HashMap<>();
 
         inscripciones.stream()
-                .map(Inscripcion::getCursoId)
+                .map(this::getCursoId)
                 .filter(Objects::nonNull)
                 .distinct()
                 .forEach(cursoId -> cursos.put(cursoId, obtenerCurso(cursoId)));
@@ -153,10 +153,10 @@ public class HistorialAcademicoServiceImpl implements HistorialAcademicoService 
 
         return HistorialCursoResponseDTO.builder()
                 .inscripcionId(inscripcion.getId())
-                .cursoId(inscripcion.getCursoId())
+                .cursoId(getCursoId(inscripcion))
                 .codigoCurso(curso.getCodigo())
                 .nombreCurso(curso.getNombre())
-                .carreraId(curso.getCarreraId())
+                .carreraId(getCarreraId(curso))
                 .cicloAnio(inscripcion.getCicloAnio())
                 .grado(inscripcion.getGrado())
                 .seccion(inscripcion.getSeccion())
@@ -260,6 +260,18 @@ public class HistorialAcademicoServiceImpl implements HistorialAcademicoService 
         if (estudianteId == null || estudianteId <= 0) {
             throw new IllegalArgumentException("El identificador del estudiante debe ser positivo.");
         }
+    }
+
+    private Long getCursoId(Inscripcion inscripcion) {
+        return inscripcion.getCurso() == null ? null : inscripcion.getCurso().getId();
+    }
+
+    private Long getCursoId(Nota nota) {
+        return nota.getCurso() == null ? null : nota.getCurso().getId();
+    }
+
+    private Long getCarreraId(Curso curso) {
+        return curso.getCarrera() == null ? null : curso.getCarrera().getId();
     }
 
     private record CursoCicloKey(Long cursoId, Integer cicloAnio) {

@@ -40,16 +40,17 @@ public class ColegiaturaServiceImpl implements ColegiaturaService {
     private final EstudianteService estudianteService;
 
     @Override
-    public Colegiatura crear(Colegiatura colegiatura) {
-        validarEstudianteActivo(colegiatura.getEstudianteId());
+    public Colegiatura crear(Colegiatura colegiatura, Long estudianteId) {
+        Estudiante estudiante = validarEstudianteActivo(estudianteId);
         validarCiclo(colegiatura.getCicloAnio());
         validarFechas(colegiatura);
 
         String conceptoNormalizado = normalizarConcepto(colegiatura.getConcepto());
         BigDecimal montoTotal = normalizarMonto(colegiatura.getMontoTotal());
         validarMontoMayorQueCero(montoTotal);
-        validarDuplicadoActivo(colegiatura.getEstudianteId(), colegiatura.getCicloAnio(), conceptoNormalizado, null);
+        validarDuplicadoActivo(estudianteId, colegiatura.getCicloAnio(), conceptoNormalizado, null);
 
+        colegiatura.setEstudiante(estudiante);
         colegiatura.setConcepto(conceptoNormalizado);
         colegiatura.setMontoTotal(montoTotal);
         colegiatura.setMontoPagado(CERO);
@@ -115,7 +116,7 @@ public class ColegiaturaServiceImpl implements ColegiaturaService {
         validarFechas(existente);
         validarMontoMayorQueCero(montoTotal);
         validarMontoNoMenorAlPagado(montoTotal, existente.getMontoPagado());
-        validarDuplicadoActivo(existente.getEstudianteId(), existente.getCicloAnio(), concepto, id);
+        validarDuplicadoActivo(getEstudianteId(existente), existente.getCicloAnio(), concepto, id);
 
         existente.setConcepto(concepto);
         existente.setMontoTotal(montoTotal);
@@ -159,9 +160,9 @@ public class ColegiaturaServiceImpl implements ColegiaturaService {
         Colegiatura colegiatura = obtenerPorId(id);
 
         if (Boolean.TRUE.equals(activo)) {
-            validarEstudianteActivo(colegiatura.getEstudianteId());
+            validarEstudianteActivo(getEstudianteId(colegiatura));
             validarDuplicadoActivo(
-                    colegiatura.getEstudianteId(),
+                    getEstudianteId(colegiatura),
                     colegiatura.getCicloAnio(),
                     normalizarConcepto(colegiatura.getConcepto()),
                     id);
@@ -403,5 +404,9 @@ public class ColegiaturaServiceImpl implements ColegiaturaService {
     private boolean tieneSaldoPendiente(Colegiatura colegiatura) {
         return colegiatura.getSaldoPendiente() != null
                 && colegiatura.getSaldoPendiente().compareTo(CERO) > 0;
+    }
+
+    private Long getEstudianteId(Colegiatura colegiatura) {
+        return colegiatura.getEstudiante() == null ? null : colegiatura.getEstudiante().getId();
     }
 }

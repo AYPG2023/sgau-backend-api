@@ -1,8 +1,10 @@
 package com.umg.sgau.usuario.mapper;
 
+import com.umg.sgau.rol.mapper.RolMapper;
 import com.umg.sgau.usuario.dto.UsuarioRequestDTO;
 import com.umg.sgau.usuario.dto.UsuarioResponseDTO;
 import com.umg.sgau.usuario.entity.Usuario;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -31,6 +33,9 @@ public final class UsuarioMapper {
         dto.setEmail(usuario.getEmail());
         dto.setNombre(usuario.getNombre());
         dto.setApellido(usuario.getApellido());
+        dto.setRoles(usuario.getRoles() == null
+                ? Collections.emptySet()
+                : usuario.getRoles().stream().map(RolMapper::aSummaryDTO).collect(Collectors.toSet()));
         dto.setActivo(usuario.getActivo());
         dto.setFechaCreacion(usuario.getFechaCreacion());
         return dto;
@@ -42,4 +47,5 @@ public final class UsuarioMapper {
                 .map(UsuarioMapper::aResponseDTO) // map() aplica la conversión a cada elemento
                 .collect(Collectors.toList());    // collect() junta los resultados en una lista
     }
+
 }

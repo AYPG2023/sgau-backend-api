@@ -13,15 +13,35 @@ import java.util.List;
 @Repository
 public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> {
 
-    Page<Inscripcion> findByEstudianteId(Long estudianteId, Pageable pageable);
+    Page<Inscripcion> findByEstudiante_Id(Long estudianteId, Pageable pageable);
 
-    Page<Inscripcion> findByEstudianteIdAndActivoTrue(Long estudianteId, Pageable pageable);
+    default Page<Inscripcion> findByEstudianteId(Long estudianteId, Pageable pageable) {
+        return findByEstudiante_Id(estudianteId, pageable);
+    }
 
-    Page<Inscripcion> findByCarreraId(Long carreraId, Pageable pageable);
+    Page<Inscripcion> findByEstudiante_IdAndActivoTrue(Long estudianteId, Pageable pageable);
 
-    Page<Inscripcion> findByCursoId(Long cursoId, Pageable pageable);
+    default Page<Inscripcion> findByEstudianteIdAndActivoTrue(Long estudianteId, Pageable pageable) {
+        return findByEstudiante_IdAndActivoTrue(estudianteId, pageable);
+    }
 
-    Page<Inscripcion> findByCursoIdAndActivoTrue(Long cursoId, Pageable pageable);
+    Page<Inscripcion> findByCarrera_Id(Long carreraId, Pageable pageable);
+
+    default Page<Inscripcion> findByCarreraId(Long carreraId, Pageable pageable) {
+        return findByCarrera_Id(carreraId, pageable);
+    }
+
+    Page<Inscripcion> findByCurso_Id(Long cursoId, Pageable pageable);
+
+    default Page<Inscripcion> findByCursoId(Long cursoId, Pageable pageable) {
+        return findByCurso_Id(cursoId, pageable);
+    }
+
+    Page<Inscripcion> findByCurso_IdAndActivoTrue(Long cursoId, Pageable pageable);
+
+    default Page<Inscripcion> findByCursoIdAndActivoTrue(Long cursoId, Pageable pageable) {
+        return findByCurso_IdAndActivoTrue(cursoId, pageable);
+    }
 
     Page<Inscripcion> findByCicloAnio(Integer cicloAnio, Pageable pageable);
 
@@ -31,31 +51,56 @@ public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> 
 
     List<Inscripcion> findByActivoTrue();
 
-    boolean existsByEstudianteIdAndCursoIdAndCicloAnioAndActivoTrue(
+    boolean existsByEstudiante_IdAndCurso_IdAndCicloAnioAndActivoTrue(
             Long estudianteId,
             Long cursoId,
             Integer cicloAnio
     );
 
-    boolean existsByEstudianteIdAndCursoIdAndCicloAnioAndActivoTrueAndIdNot(
+    default boolean existsByEstudianteIdAndCursoIdAndCicloAnioAndActivoTrue(
+            Long estudianteId,
+            Long cursoId,
+            Integer cicloAnio) {
+        return existsByEstudiante_IdAndCurso_IdAndCicloAnioAndActivoTrue(estudianteId, cursoId, cicloAnio);
+    }
+
+    boolean existsByEstudiante_IdAndCurso_IdAndCicloAnioAndActivoTrueAndIdNot(
             Long estudianteId,
             Long cursoId,
             Integer cicloAnio,
             Long id
     );
 
+    default boolean existsByEstudianteIdAndCursoIdAndCicloAnioAndActivoTrueAndIdNot(
+            Long estudianteId,
+            Long cursoId,
+            Integer cicloAnio,
+            Long id) {
+        return existsByEstudiante_IdAndCurso_IdAndCicloAnioAndActivoTrueAndIdNot(estudianteId, cursoId, cicloAnio, id);
+    }
+
     // Regla de negocio: no permitir inscripcion activa duplicada
-    boolean existsByEstudianteIdAndCarreraIdAndGradoAndSeccionAndCicloAnioAndActivoTrue(
+    boolean existsByEstudiante_IdAndCarrera_IdAndGradoAndSeccionAndCicloAnioAndActivoTrue(
             Long estudianteId,
             Long carreraId,
             String grado,
             String seccion,
             Integer cicloAnio
     );
+
+    default boolean existsByEstudianteIdAndCarreraIdAndGradoAndSeccionAndCicloAnioAndActivoTrue(
+            Long estudianteId,
+            Long carreraId,
+            String grado,
+            String seccion,
+            Integer cicloAnio) {
+        return existsByEstudiante_IdAndCarrera_IdAndGradoAndSeccionAndCicloAnioAndActivoTrue(
+                estudianteId, carreraId, grado, seccion, cicloAnio);
+    }
 
     // Igual que el anterior pero excluyendo un id: se usa al ACTUALIZAR,
     // para que el propio registro no aparezca como "duplicado" de si mismo
-    boolean existsByEstudianteIdAndCarreraIdAndGradoAndSeccionAndCicloAnioAndActivoTrueAndIdNot(
+    boolean existsByEstudiante_IdAndCarrera_IdAndGradoAndSeccionAndCicloAnioAndActivoTrueAndIdNot(
             Long estudianteId,
             Long carreraId,
             String grado,
@@ -63,13 +108,24 @@ public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> 
             Integer cicloAnio,
             Long id
     );
+
+    default boolean existsByEstudianteIdAndCarreraIdAndGradoAndSeccionAndCicloAnioAndActivoTrueAndIdNot(
+            Long estudianteId,
+            Long carreraId,
+            String grado,
+            String seccion,
+            Integer cicloAnio,
+            Long id) {
+        return existsByEstudiante_IdAndCarrera_IdAndGradoAndSeccionAndCicloAnioAndActivoTrueAndIdNot(
+                estudianteId, carreraId, grado, seccion, cicloAnio, id);
+    }
 
     // Filtros combinados: cada parametro en NULL significa "no filtrar por este campo"
     @Query("""
             SELECT i FROM Inscripcion i
-            WHERE (:estudianteId IS NULL OR i.estudianteId = :estudianteId)
-              AND (:carreraId IS NULL OR i.carreraId = :carreraId)
-              AND (:cursoId IS NULL OR i.cursoId = :cursoId)
+            WHERE (:estudianteId IS NULL OR i.estudiante.id = :estudianteId)
+              AND (:carreraId IS NULL OR i.carrera.id = :carreraId)
+              AND (:cursoId IS NULL OR i.curso.id = :cursoId)
               AND (:cicloAnio IS NULL OR i.cicloAnio = :cicloAnio)
               AND (:grado IS NULL OR i.grado = :grado)
               AND (:seccion IS NULL OR i.seccion = :seccion)

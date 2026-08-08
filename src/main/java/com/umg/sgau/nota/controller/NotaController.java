@@ -56,7 +56,7 @@ public class NotaController {
     public ResponseEntity<NotaResponseDTO> crear(
             @Valid @RequestBody NotaCreateRequestDTO request) {
         Nota nota = NotaMapper.aEntidad(request);
-        Nota creada = notaService.crear(nota);
+        Nota creada = notaService.crear(nota, request.getEstudianteId(), request.getCursoId());
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(NotaMapper.aResponseDTO(creada));

@@ -1,9 +1,15 @@
 package com.umg.sgau.inscripcion.entity;
+import com.umg.sgau.carrera.entity.Carrera;
+import com.umg.sgau.curso.entity.Curso;
+import com.umg.sgau.estudiante.entity.Estudiante;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -28,14 +34,17 @@ public class Inscripcion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name= "estudiante_id", nullable = false)
-    private Long estudianteId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name= "estudiante_id", nullable = false)
+    private Estudiante estudiante;
 
-    @Column(name = "carrera_id", nullable = false)
-    private Long carreraId;
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "carrera_id", nullable = false)
+    private Carrera carrera;
 
-    @Column(name = "curso_id")
-    private Long cursoId;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "curso_id")
+    private Curso curso;
 
     @Column(nullable = false, length = 50)
     private String grado;
@@ -82,5 +91,44 @@ public class Inscripcion {
         fechaActualizacion = LocalDateTime.now();
     }
 
+    public Long getEstudianteId() {
+        return estudiante == null ? null : estudiante.getId();
+    }
 
+    public void setEstudianteId(Long estudianteId) {
+        this.estudiante = estudianteId == null ? null : Estudiante.builder().id(estudianteId).activo(true).build();
+    }
+
+    public Long getCarreraId() {
+        return carrera == null ? null : carrera.getId();
+    }
+
+    public void setCarreraId(Long carreraId) {
+        this.carrera = carreraId == null ? null : Carrera.builder().id(carreraId).activo(true).build();
+    }
+
+    public Long getCursoId() {
+        return curso == null ? null : curso.getId();
+    }
+
+    public void setCursoId(Long cursoId) {
+        this.curso = cursoId == null ? null : Curso.builder().id(cursoId).activo(true).build();
+    }
+
+    public static class InscripcionBuilder {
+        public InscripcionBuilder estudianteId(Long estudianteId) {
+            this.estudiante = estudianteId == null ? null : Estudiante.builder().id(estudianteId).activo(true).build();
+            return this;
+        }
+
+        public InscripcionBuilder carreraId(Long carreraId) {
+            this.carrera = carreraId == null ? null : Carrera.builder().id(carreraId).activo(true).build();
+            return this;
+        }
+
+        public InscripcionBuilder cursoId(Long cursoId) {
+            this.curso = cursoId == null ? null : Curso.builder().id(cursoId).activo(true).build();
+            return this;
+        }
+    }
 }

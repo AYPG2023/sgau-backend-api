@@ -28,7 +28,6 @@ public final class CursoMapper {
                 .descripcion(dto.getDescripcion())
                 .creditos(dto.getCreditos())
                 .horasSemanales(dto.getHorasSemanales())
-                .carreraId(dto.getCarreraId())
                 .cicloAnio(dto.getCicloAnio())
                 .build();
     }
@@ -45,8 +44,8 @@ public final class CursoMapper {
                 .descripcion(curso.getDescripcion())
                 .creditos(curso.getCreditos())
                 .horasSemanales(curso.getHorasSemanales())
-                .carreraId(curso.getCarreraId())
-                .docenteId(curso.getDocenteId())
+                .carreraId(curso.getCarrera() != null ? curso.getCarrera().getId() : null)
+                .docenteId(curso.getDocente() != null ? curso.getDocente().getId() : null)
                 .cicloAnio(curso.getCicloAnio())
                 .activo(curso.getActivo())
                 .fechaCreacion(curso.getFechaCreacion())
@@ -63,7 +62,7 @@ public final class CursoMapper {
                 .id(curso.getId())
                 .codigo(curso.getCodigo())
                 .nombre(curso.getNombre())
-                .carreraId(curso.getCarreraId())
+                .carreraId(curso.getCarrera() != null ? curso.getCarrera().getId() : null)
                 .activo(curso.getActivo())
                 .build();
     }
@@ -88,7 +87,6 @@ public final class CursoMapper {
         curso.setDescripcion(dto.getDescripcion());
         curso.setCreditos(dto.getCreditos());
         curso.setHorasSemanales(dto.getHorasSemanales());
-        curso.setCarreraId(dto.getCarreraId());
         curso.setCicloAnio(dto.getCicloAnio());
     }
 }

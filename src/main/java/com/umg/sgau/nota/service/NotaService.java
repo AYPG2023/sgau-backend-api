@@ -17,7 +17,11 @@ public interface NotaService {
      * Registra una nueva calificacion.
      * Valida que no exista una nota activa duplicada para la misma combinacion.
      */
-    Nota crear(Nota nota);
+    Nota crear(Nota nota, Long estudianteId, Long cursoId);
+
+    default Nota crear(Nota nota) {
+        return crear(nota, nota.getEstudianteId(), nota.getCursoId());
+    }
 
     /**
      * Obtiene una nota por su ID.
