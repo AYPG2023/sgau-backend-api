@@ -8,6 +8,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.crypto.SecretKey;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -37,7 +39,11 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userId", usuario.getId());
         claims.put("email", usuario.getEmail());
-        claims.put("role", usuario.getRol() == null ? null : usuario.getRol().name());
+        Set<String> authorities = userDetails.getAuthorities()
+                .stream()
+                .map(authority -> authority.getAuthority())
+                .collect(Collectors.toSet());
+        claims.put("authorities", authorities);
         return generarToken(claims, userDetails);
     }
 

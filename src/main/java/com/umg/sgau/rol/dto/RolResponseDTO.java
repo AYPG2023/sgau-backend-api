@@ -1,28 +1,27 @@
-package com.umg.sgau.usuario.dto;
+package com.umg.sgau.rol.dto;
 
-import com.umg.sgau.rol.dto.RolSummaryDTO;
+import com.umg.sgau.permiso.dto.PermisoSummaryDTO;
+import java.time.LocalDateTime;
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.LocalDateTime;
-import java.util.Set;
-
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class UsuarioResponseDTO {
+public class RolResponseDTO {
 
     private Long id;
-    private String username;
-    private String email;
+    private String codigo;
     private String nombre;
-    private String apellido;
-    private Set<RolSummaryDTO> roles;
+    private String descripcion;
     private Boolean activo;
+    private Set<PermisoSummaryDTO> permisos;
     private LocalDateTime fechaCreacion;
+    private LocalDateTime fechaActualizacion;
 }

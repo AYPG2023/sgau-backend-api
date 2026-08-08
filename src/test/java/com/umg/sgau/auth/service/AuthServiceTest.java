@@ -10,9 +10,10 @@ import static org.mockito.Mockito.when;
 import com.umg.sgau.auth.dto.LoginRequestDTO;
 import com.umg.sgau.auth.dto.LoginResponseDTO;
 import com.umg.sgau.config.JwtService;
-import com.umg.sgau.usuario.entity.Rol;
+import com.umg.sgau.rol.entity.Rol;
 import com.umg.sgau.usuario.entity.Usuario;
 import com.umg.sgau.usuario.repository.UsuarioRepository;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +61,7 @@ class AuthServiceTest {
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
-        when(usuarioRepository.findByUsernameIgnoreCaseOrEmailIgnoreCase("admin", "admin"))
+        when(usuarioRepository.findWithRolesAndPermisosByUsernameIgnoreCaseOrEmailIgnoreCase("admin", "admin"))
                 .thenReturn(Optional.of(usuario));
         when(jwtService.generarToken(usuario, principal)).thenReturn("jwt-token");
         when(jwtService.getExpirationSeconds()).thenReturn(3600L);
@@ -72,7 +73,7 @@ class AuthServiceTest {
         assertThat(response.getExpiresIn()).isEqualTo(3600L);
         assertThat(response.getUsuarioId()).isEqualTo(1L);
         assertThat(response.getUsername()).isEqualTo("admin");
-        assertThat(response.getRol()).isEqualTo("ADMIN");
+        assertThat(response.getRoles()).containsExactly("ADMIN");
     }
 
     @Test
@@ -99,7 +100,7 @@ class AuthServiceTest {
 
         when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
                 .thenReturn(authentication);
-        when(usuarioRepository.findByUsernameIgnoreCaseOrEmailIgnoreCase("admin", "admin"))
+        when(usuarioRepository.findWithRolesAndPermisosByUsernameIgnoreCaseOrEmailIgnoreCase("admin", "admin"))
                 .thenReturn(Optional.of(usuario("admin", false)));
 
         assertThatThrownBy(() -> authService.login(request))
@@ -131,7 +132,16 @@ class AuthServiceTest {
         usuario.setNombre("Admin");
         usuario.setApellido("SGAU");
         usuario.setActivo(activo);
-        usuario.setRol(Rol.ADMIN);
+        usuario.setRoles(new HashSet<>(List.of(rolAdmin())));
         return usuario;
+    }
+
+    private Rol rolAdmin() {
+        Rol rol = new Rol();
+        rol.setId(1L);
+        rol.setCodigo("ADMIN");
+        rol.setNombre("Administrador");
+        rol.setActivo(true);
+        return rol;
     }
 }

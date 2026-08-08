@@ -3,7 +3,6 @@ package com.umg.sgau.config;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.umg.sgau.usuario.entity.Rol;
 import com.umg.sgau.usuario.entity.Usuario;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -57,7 +56,6 @@ class JwtServiceTest {
         usuario.setId(1L);
         usuario.setUsername(username);
         usuario.setEmail(username + "@sgau.test");
-        usuario.setRol(Rol.ADMIN);
         return usuario;
     }
 }

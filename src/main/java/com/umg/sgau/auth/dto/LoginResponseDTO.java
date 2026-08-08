@@ -1,5 +1,6 @@
 package com.umg.sgau.auth.dto;
 
+import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,5 +21,5 @@ public class LoginResponseDTO {
     private String username;
     private String nombre;
     private String apellido;
-    private String rol;
+    private Set<String> roles;
 }

@@ -4,8 +4,11 @@ import com.umg.sgau.auth.dto.LoginRequestDTO;
 import com.umg.sgau.auth.dto.LoginResponseDTO;
 import com.umg.sgau.auth.dto.PerfilResponseDTO;
 import com.umg.sgau.config.JwtService;
+import com.umg.sgau.rol.entity.Rol;
 import com.umg.sgau.usuario.entity.Usuario;
 import com.umg.sgau.usuario.repository.UsuarioRepository;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -53,7 +56,7 @@ public class AuthService {
                     .username(usuario.getUsername())
                     .nombre(usuario.getNombre())
                     .apellido(usuario.getApellido())
-                    .rol(usuario.getRol() == null ? null : usuario.getRol().name())
+                    .roles(obtenerCodigosRolesActivos(usuario))
                     .build();
         } catch (AuthenticationException exception) {
             throw new BadCredentialsException("Credenciales invalidas");
@@ -68,14 +71,14 @@ public class AuthService {
                 .email(usuario.getEmail())
                 .nombre(usuario.getNombre())
                 .apellido(usuario.getApellido())
-                .rol(usuario.getRol() == null ? null : usuario.getRol().name())
+                .roles(obtenerCodigosRolesActivos(usuario))
                 .activo(usuario.getActivo())
                 .build();
     }
 
     private Usuario buscarUsuarioActivo(String identificador) {
         Usuario usuario = usuarioRepository
-                .findByUsernameIgnoreCaseOrEmailIgnoreCase(identificador, identificador)
+                .findWithRolesAndPermisosByUsernameIgnoreCaseOrEmailIgnoreCase(identificador, identificador)
                 .orElseThrow(() -> new UsernameNotFoundException("Credenciales invalidas"));
 
         if (!Boolean.TRUE.equals(usuario.getActivo())) {
@@ -83,5 +86,12 @@ public class AuthService {
         }
 
         return usuario;
+    }
+
+    private Set<String> obtenerCodigosRolesActivos(Usuario usuario) {
+        return usuario.getRoles().stream()
+                .filter(rol -> Boolean.TRUE.equals(rol.getActivo()))
+                .map(Rol::getCodigo)
+                .collect(Collectors.toSet());
     }
 }

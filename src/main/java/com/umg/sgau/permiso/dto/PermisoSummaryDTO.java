@@ -1,6 +1,5 @@
-package com.umg.sgau.auth.dto;
+package com.umg.sgau.permiso.dto;
 
-import java.util.Set;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -12,13 +11,9 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PerfilResponseDTO {
+public class PermisoSummaryDTO {
 
     private Long id;
-    private String username;
-    private String email;
+    private String codigo;
     private String nombre;
-    private String apellido;
-    private Set<String> roles;
-    private Boolean activo;
 }

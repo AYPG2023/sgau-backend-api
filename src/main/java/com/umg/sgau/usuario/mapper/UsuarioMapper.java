@@ -1,9 +1,10 @@
 package com.umg.sgau.usuario.mapper;
 
+import com.umg.sgau.rol.mapper.RolMapper;
 import com.umg.sgau.usuario.dto.UsuarioRequestDTO;
 import com.umg.sgau.usuario.dto.UsuarioResponseDTO;
-import com.umg.sgau.usuario.entity.Rol;
 import com.umg.sgau.usuario.entity.Usuario;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -21,7 +22,6 @@ public final class UsuarioMapper {
         usuario.setEmail(dto.getEmail());
         usuario.setNombre(dto.getNombre());
         usuario.setApellido(dto.getApellido());
-        usuario.setRol(parseRol(dto.getRol()));
         return usuario;
     }
 
@@ -33,7 +33,9 @@ public final class UsuarioMapper {
         dto.setEmail(usuario.getEmail());
         dto.setNombre(usuario.getNombre());
         dto.setApellido(usuario.getApellido());
-        dto.setRol(usuario.getRol() == null ? null : usuario.getRol().name());
+        dto.setRoles(usuario.getRoles() == null
+                ? Collections.emptySet()
+                : usuario.getRoles().stream().map(RolMapper::aSummaryDTO).collect(Collectors.toSet()));
         dto.setActivo(usuario.getActivo());
         dto.setFechaCreacion(usuario.getFechaCreacion());
         return dto;
@@ -46,10 +48,4 @@ public final class UsuarioMapper {
                 .collect(Collectors.toList());    // collect() junta los resultados en una lista
     }
 
-    private static Rol parseRol(String rol) {
-        if (rol == null || rol.isBlank()) {
-            return null;
-        }
-        return Rol.valueOf(rol.trim().toUpperCase());
-    }
 }
