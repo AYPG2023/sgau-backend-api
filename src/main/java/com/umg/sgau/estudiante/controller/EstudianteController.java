@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -52,6 +53,7 @@ public class EstudianteController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #id)")
     public ResponseEntity<?> obtenerPorId(
             @PathVariable Long id
     ) {
@@ -76,6 +78,7 @@ public class EstudianteController {
     }
 
     @GetMapping
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<?> listar(
             @RequestParam(required = false) String texto,
             @RequestParam(required = false) Boolean activo,
@@ -162,6 +165,7 @@ public class EstudianteController {
     }
 
     @GetMapping("/{id}/resumen")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #id)")
     public ResponseEntity<?> obtenerResumen(
             @PathVariable Long id
     ) {
@@ -188,6 +192,7 @@ public class EstudianteController {
     }
 
     @GetMapping("/{id}/historial")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #id)")
     public ResponseEntity<?> obtenerHistorial(
             @PathVariable Long id
     ) {
@@ -197,6 +202,7 @@ public class EstudianteController {
     }
 
     @GetMapping("/{id}/historial-academico")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #id)")
     public ResponseEntity<?> obtenerHistorialAcademico(
             @PathVariable Long id
     ) {
@@ -206,6 +212,7 @@ public class EstudianteController {
     }
 
     @GetMapping("/{id}/historial-academico/ciclo/{cicloAnio}")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #id)")
     public ResponseEntity<?> obtenerHistorialAcademicoPorCiclo(
             @PathVariable Long id,
             @PathVariable Integer cicloAnio
@@ -216,6 +223,7 @@ public class EstudianteController {
     }
 
     @GetMapping("/activos")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<?> obtenerActivos() {
         return ResponseEntity.ok(
                 EstudianteMapper.toResponseDTOList(
@@ -225,6 +233,7 @@ public class EstudianteController {
     }
 
     @GetMapping("/activos/correos")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<?> obtenerCorreosActivos() {
         return ResponseEntity.ok(estudianteService.obtenerCorreosActivos());
     }

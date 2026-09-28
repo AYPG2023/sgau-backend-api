@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
@@ -53,6 +54,7 @@ public class CursoController {
     }
 
     @GetMapping
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<Page<CursoResponseDTO>> listar(
             @RequestParam(required = false) String texto,
             @RequestParam(required = false) Long carreraId,
@@ -74,6 +76,7 @@ public class CursoController {
     }
 
     @GetMapping("/activos")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<List<CursoSummaryDTO>> obtenerCursosActivos() {
         List<Curso> cursos = cursoService.obtenerCursosActivos();
 
@@ -85,11 +88,13 @@ public class CursoController {
     }
 
     @GetMapping("/nombres-activos")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<List<String>> obtenerNombresDeCursosActivos() {
         return ResponseEntity.ok(cursoService.obtenerNombresDeCursosActivos());
     }
 
     @GetMapping("/docente/{docenteId}")
+    @PreAuthorize("@accessScope.esDocentePropietario(authentication, #docenteId)")
     public ResponseEntity<List<CursoResponseDTO>> obtenerCursosPorDocente(
             @PathVariable Long docenteId) {
         List<Curso> cursos = cursoService.obtenerCursosPorDocente(docenteId);
@@ -102,6 +107,7 @@ public class CursoController {
     }
 
     @GetMapping("/carrera/{carreraId}")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<Page<CursoResponseDTO>> obtenerCursosActivosPorCarrera(
             @PathVariable Long carreraId,
             Pageable pageable) {
@@ -110,6 +116,7 @@ public class CursoController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@accessScope.puedeLeerCurso(authentication, #id)")
     public ResponseEntity<CursoResponseDTO> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(
                 CursoMapper.aResponseDTO(
@@ -155,6 +162,7 @@ public class CursoController {
     }
 
     @GetMapping("/{id}/docente")
+    @PreAuthorize("@accessScope.puedeLeerCurso(authentication, #id)")
     public ResponseEntity<DocenteResponseDTO> obtenerDocenteAsignado(@PathVariable Long id) {
         return ResponseEntity.ok(
                 DocenteMapper.aResponseDTO(cursoService.obtenerDocenteAsignado(id)));

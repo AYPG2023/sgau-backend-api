@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -49,6 +50,7 @@ public class InscripcionController {
      * HTTP 201 Created.
      */
     @PostMapping
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<InscripcionResponseDTO> registrar(
             @Valid @RequestBody InscripcionCreateRequestDTO request) {
         Inscripcion inscripcion = InscripcionMapper.aEntidad(request);
@@ -67,6 +69,7 @@ public class InscripcionController {
      * significa "no filtrar por este campo".
      */
     @GetMapping
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<Page<InscripcionResponseDTO>> listar(
             @RequestParam(required = false) Long estudianteId,
             @RequestParam(required = false) Long carreraId,
@@ -88,6 +91,7 @@ public class InscripcionController {
      * HTTP 200 OK o 404 si no existe.
      */
     @GetMapping("/{id}")
+    @PreAuthorize("@accessScope.puedeLeerInscripcion(authentication, #id)")
     public ResponseEntity<InscripcionResponseDTO> obtenerPorId(
             @PathVariable Long id) {
         return ResponseEntity.ok(
@@ -100,6 +104,7 @@ public class InscripcionController {
      * HTTP 200 OK, 404 si no existe, 409 si genera duplicado.
      */
     @PutMapping("/{id}")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<InscripcionResponseDTO> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody InscripcionUpdateRequestDTO request) {
@@ -115,6 +120,7 @@ public class InscripcionController {
      * HTTP 200 OK, 404 si no existe, 409 si ya esta anulada.
      */
     @PatchMapping("/{id}/estado")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<InscripcionResponseDTO> anular(
             @PathVariable Long id,
             @Valid @RequestBody InscripcionStatusRequestDTO request) {
@@ -123,6 +129,7 @@ public class InscripcionController {
     }
 
     @PatchMapping("/{id}/reactivar")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<InscripcionResponseDTO> reactivar(@PathVariable Long id) {
         return ResponseEntity.ok(
                 InscripcionMapper.aResponseDTO(inscripcionService.reactivar(id)));
@@ -133,6 +140,7 @@ public class InscripcionController {
      * ordenado por fecha de inscripcion descendente.
      */
     @GetMapping("/estudiante/{estudianteId}")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #estudianteId)")
     public ResponseEntity<Page<InscripcionResponseDTO>> historialPorEstudiante(
             @PathVariable Long estudianteId,
             Pageable pageable) {
@@ -142,6 +150,7 @@ public class InscripcionController {
     }
 
     @GetMapping("/curso/{cursoId}")
+    @PreAuthorize("@accessScope.puedeGestionarCurso(authentication, #cursoId)")
     public ResponseEntity<Page<InscripcionResponseDTO>> inscripcionesPorCurso(
             @PathVariable Long cursoId,
             Pageable pageable) {
@@ -151,6 +160,7 @@ public class InscripcionController {
     }
 
     @GetMapping("/estudiante/{estudianteId}/activas")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #estudianteId)")
     public ResponseEntity<Page<InscripcionResponseDTO>> inscripcionesActivasPorEstudiante(
             @PathVariable Long estudianteId,
             Pageable pageable) {
@@ -160,6 +170,7 @@ public class InscripcionController {
     }
 
     @GetMapping("/curso/{cursoId}/activas")
+    @PreAuthorize("@accessScope.puedeGestionarCurso(authentication, #cursoId)")
     public ResponseEntity<Page<InscripcionResponseDTO>> inscripcionesActivasPorCurso(
             @PathVariable Long cursoId,
             Pageable pageable) {
@@ -169,12 +180,14 @@ public class InscripcionController {
     }
 
     @GetMapping("/activas")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<List<InscripcionResponseDTO>> obtenerActivas() {
         return ResponseEntity.ok(
                 InscripcionMapper.aResponseDTOList(inscripcionService.obtenerActivas()));
     }
 
     @GetMapping("/activas/estudiantes")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<List<Long>> obtenerEstudiantesConInscripcionActiva() {
         return ResponseEntity.ok(inscripcionService.obtenerEstudiantesConInscripcionActiva());
     }

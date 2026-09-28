@@ -13,6 +13,8 @@ import java.util.List;
 public interface ColegiaturaRepository
         extends JpaRepository<Colegiatura, Long> {
 
+    boolean existsByIdAndEstudiante_Id(Long id, Long estudianteId);
+
     Page<Colegiatura> findByEstudiante_Id(
             Long estudianteId,
             Pageable pageable

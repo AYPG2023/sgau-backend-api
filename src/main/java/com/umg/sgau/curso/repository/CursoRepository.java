@@ -18,6 +18,7 @@ public interface CursoRepository extends JpaRepository<Curso, Long> {
     boolean existsByCodigo(String codigo);
 
     boolean existsByCodigoAndIdNot(String codigo, Long id);
+    boolean existsByIdAndDocente_Id(Long id, Long docenteId);
 
     Page<Curso> findByCarrera_Id(Long carreraId, Pageable pageable);
 

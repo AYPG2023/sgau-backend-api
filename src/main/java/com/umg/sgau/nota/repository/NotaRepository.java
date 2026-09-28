@@ -13,6 +13,9 @@ import java.util.List;
 @Repository
 public interface NotaRepository extends JpaRepository<Nota, Long> {
 
+    boolean existsByIdAndEstudiante_Id(Long id, Long estudianteId);
+    boolean existsByIdAndCurso_Docente_Id(Long id, Long docenteId);
+
     Page<Nota> findByEstudiante_Id(Long estudianteId, Pageable pageable);
 
     default Page<Nota> findByEstudianteId(Long estudianteId, Pageable pageable) {

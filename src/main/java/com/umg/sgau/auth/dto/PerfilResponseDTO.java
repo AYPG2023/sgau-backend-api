@@ -20,5 +20,6 @@ public class PerfilResponseDTO {
     private String nombre;
     private String apellido;
     private Set<String> roles;
+    private Set<String> permisos;
     private Boolean activo;
 }

@@ -22,4 +22,5 @@ public class LoginResponseDTO {
     private String nombre;
     private String apellido;
     private Set<String> roles;
+    private Set<String> permisos;
 }

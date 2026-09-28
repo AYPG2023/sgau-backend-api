@@ -13,6 +13,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -53,6 +54,7 @@ public class NotaController {
     }
 
     @PostMapping
+    @PreAuthorize("@accessScope.puedeGestionarCurso(authentication, #request.cursoId)")
     public ResponseEntity<NotaResponseDTO> crear(
             @Valid @RequestBody NotaCreateRequestDTO request) {
         Nota nota = NotaMapper.aEntidad(request);
@@ -63,6 +65,7 @@ public class NotaController {
     }
 
     @GetMapping
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<Page<NotaResponseDTO>> listar(
             @RequestParam(required = false) Long estudianteId,
             @RequestParam(required = false) Long cursoId,
@@ -77,12 +80,14 @@ public class NotaController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@accessScope.puedeLeerNota(authentication, #id)")
     public ResponseEntity<NotaResponseDTO> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(
                 NotaMapper.aResponseDTO(notaService.obtenerPorId(id)));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@accessScope.puedeGestionarNota(authentication, #id)")
     public ResponseEntity<NotaResponseDTO> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody NotaUpdateRequestDTO request) {
@@ -93,6 +98,7 @@ public class NotaController {
     }
 
     @PatchMapping("/{id}/estado")
+    @PreAuthorize("@accessScope.puedeGestionarNota(authentication, #id)")
     public ResponseEntity<NotaResponseDTO> cambiarEstado(
             @PathVariable Long id,
             @Valid @RequestBody NotaStatusRequestDTO request) {
@@ -101,6 +107,7 @@ public class NotaController {
     }
 
     @GetMapping("/estudiante/{estudianteId}")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #estudianteId)")
     public ResponseEntity<Page<NotaResponseDTO>> notasDelEstudiante(
             @PathVariable Long estudianteId,
             Pageable pageable) {
@@ -110,6 +117,7 @@ public class NotaController {
     }
 
     @GetMapping("/estudiante/{estudianteId}/activas")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #estudianteId)")
     public ResponseEntity<Page<NotaResponseDTO>> notasActivasDelEstudiante(
             @PathVariable Long estudianteId,
             Pageable pageable) {
@@ -119,6 +127,7 @@ public class NotaController {
     }
 
     @GetMapping("/curso/{cursoId}")
+    @PreAuthorize("@accessScope.puedeGestionarCurso(authentication, #cursoId)")
     public ResponseEntity<Page<NotaResponseDTO>> notasDelCurso(
             @PathVariable Long cursoId,
             Pageable pageable) {
@@ -128,6 +137,7 @@ public class NotaController {
     }
 
     @GetMapping("/estudiante/{estudianteId}/curso/{cursoId}")
+    @PreAuthorize("@accessScope.puedeLeerNotasEstudianteCurso(authentication, #estudianteId, #cursoId)")
     public ResponseEntity<Page<NotaResponseDTO>> notasDelEstudiantePorCurso(
             @PathVariable Long estudianteId,
             @PathVariable Long cursoId,
@@ -138,6 +148,7 @@ public class NotaController {
     }
 
     @GetMapping("/estudiante/{estudianteId}/promedio")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #estudianteId)")
     public ResponseEntity<PromedioResponseDTO> promedio(
             @PathVariable Long estudianteId) {
         BigDecimal promedio = notaService.calcularPromedioGeneral(estudianteId);
@@ -151,6 +162,7 @@ public class NotaController {
     }
 
     @GetMapping("/estudiante/{estudianteId}/calificaciones")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #estudianteId)")
     public ResponseEntity<List<BigDecimal>> calificaciones(
             @PathVariable Long estudianteId) {
         return ResponseEntity.ok(

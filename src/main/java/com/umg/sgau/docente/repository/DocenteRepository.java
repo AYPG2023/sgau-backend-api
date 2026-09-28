@@ -15,6 +15,7 @@ import com.umg.sgau.docente.entity.Docente;
 public interface DocenteRepository  extends JpaRepository <Docente, Long> {
 	
 	Optional<Docente> findByEmail(String email);
+    Optional<Docente> findByEmailIgnoreCase(String email);
 
     Optional<Docente> findByCodigoDocente(String codigoDocente);
 

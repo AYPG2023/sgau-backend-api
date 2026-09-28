@@ -658,6 +658,69 @@ No se deben colocar credenciales, secrets ni cadenas de conexion productivas den
 | BCrypt | Implementado |
 | Relaciones JPA | Implementado |
 | Roles y permisos | Implementado |
+
+## Autorizacion por permisos
+
+Ademas de requerir un JWT valido, cada operacion de negocio comprueba una authority obtenida de los permisos activos de los roles activos del usuario. La comprobacion se realiza en el servidor en cada solicitud; `ROLE_ADMIN` no omite estas reglas. Al iniciar la aplicacion se crea o actualiza el catalogo siguiente y, si existe el rol `ADMIN`, se le agregan todos los permisos para conservar su acceso.
+
+| Modulo | Operacion HTTP/ruta | Permiso |
+|---|---|---|
+| Usuarios | `GET /api/usuarios/**` (incluye roles) | `USUARIOS_LEER` |
+| Usuarios | `POST /api/usuarios` | `USUARIOS_CREAR` |
+| Usuarios | `PUT /api/usuarios/{id}` | `USUARIOS_EDITAR` |
+| Usuarios | `DELETE /api/usuarios/{id}` | `USUARIOS_ELIMINAR` |
+| Usuarios | `PUT /api/usuarios/{id}/roles` | `USUARIOS_ASIGNAR_ROLES` |
+| Roles | `GET /api/roles/**` | `ROLES_LEER` |
+| Roles | `POST /api/roles` | `ROLES_CREAR` |
+| Roles | `PUT /api/roles/{id}` | `ROLES_EDITAR` |
+| Roles | `PATCH /api/roles/{id}/estado` | `ROLES_CAMBIAR_ESTADO` |
+| Roles | `PUT /api/roles/{id}/permisos` | `ROLES_ASIGNAR_PERMISOS` |
+| Permisos | `GET /api/permisos/**` (incluye activos) | `PERMISOS_LEER` |
+| Permisos | `POST /api/permisos` | `PERMISOS_CREAR` |
+| Permisos | `PUT /api/permisos/{id}` | `PERMISOS_EDITAR` |
+| Permisos | `PATCH /api/permisos/{id}/estado` | `PERMISOS_CAMBIAR_ESTADO` |
+| Carreras | `GET`, `POST`, `PUT`, `PATCH .../estado` | `CARRERAS_LEER`, `CARRERAS_CREAR`, `CARRERAS_EDITAR`, `CARRERAS_CAMBIAR_ESTADO` |
+| Cursos | `GET`, `POST`, `PUT`, `PATCH .../estado` | `CURSOS_LEER`, `CURSOS_CREAR`, `CURSOS_EDITAR`, `CURSOS_CAMBIAR_ESTADO` |
+| Cursos | `PATCH` o `DELETE /api/cursos/{id}/docente` | `CURSOS_ASIGNAR_DOCENTE` |
+| Docentes | `GET`, `POST`, `PUT`, `PATCH .../estado`, `DELETE` | `DOCENTES_LEER`, `DOCENTES_CREAR`, `DOCENTES_EDITAR`, `DOCENTES_CAMBIAR_ESTADO`, `DOCENTES_ELIMINAR` |
+| Estudiantes | `GET`, `POST`, `PUT`, `PATCH .../estado` | `ESTUDIANTES_LEER`, `ESTUDIANTES_CREAR`, `ESTUDIANTES_EDITAR`, `ESTUDIANTES_CAMBIAR_ESTADO` |
+| Inscripciones | `GET`, `POST`, `PUT`, `PATCH .../estado` o `.../reactivar` | `INSCRIPCIONES_LEER`, `INSCRIPCIONES_CREAR`, `INSCRIPCIONES_EDITAR`, `INSCRIPCIONES_CAMBIAR_ESTADO` |
+| Notas | `GET`, `POST`, `PUT`, `PATCH .../estado` | `NOTAS_LEER`, `NOTAS_CREAR`, `NOTAS_EDITAR`, `NOTAS_CAMBIAR_ESTADO` |
+| Colegiaturas | `GET`, `POST`, `PUT`, `PATCH .../estado` | `COLEGIATURAS_LEER`, `COLEGIATURAS_CREAR`, `COLEGIATURAS_EDITAR`, `COLEGIATURAS_CAMBIAR_ESTADO` |
+| Colegiaturas | `PATCH /api/colegiaturas/{id}/pago` | `COLEGIATURAS_REGISTRAR_PAGO` |
+
+Las rutas auxiliares de lectura (listas activas, nombres/correos, consultas por docente, carrera, curso o estudiante, historiales, resumen, promedio y estado de cuenta) usan el permiso `MODULO_LEER` correspondiente. `POST /api/auth/login`, `POST /api/auth/register` y la documentacion OpenAPI conservan su acceso publico; `GET /api/auth/me` requiere autenticacion.
+
+Ejemplo de campos de sesion agregados sin cambiar los existentes:
+
+```json
+{
+  "accessToken": "eyJ...",
+  "tokenType": "Bearer",
+  "expiresIn": 3600,
+  "usuarioId": 7,
+  "username": "operador",
+  "nombre": "Ana",
+  "apellido": "Lopez",
+  "roles": ["OPERADOR"],
+  "permisos": ["USUARIOS_LEER", "CARRERAS_LEER"]
+}
+```
+
+`GET /api/auth/me` devuelve igualmente `permisos` junto con `id`, `username`, `email`, `nombre`, `apellido`, `roles` y `activo`. El arreglo es la union sin duplicados de permisos activos pertenecientes a roles activos.
+
+### Matriz base por rol y alcance de datos
+
+Los roles son dinamicos. El inicializador reconoce `ADMIN`, `ESTUDIANTE` y `DOCENTE`; cualquier otro rol existente conserva sus asignaciones manuales. Para evitar sobrescribir administracion realizada desde la aplicacion, la matriz base de `ESTUDIANTE` y `DOCENTE` solo se aplica cuando el rol aun no tiene permisos. Las siguientes ejecuciones no reemplazan ni eliminan sus asignaciones. `ADMIN` recibe de forma aditiva el catalogo completo.
+
+| Rol | Permisos base | Alcance efectivo |
+|---|---|---|
+| `ADMIN` | Todo el catalogo | Acceso global administrativo y academico |
+| `ESTUDIANTE` | `ESTUDIANTES_LEER`, `CURSOS_LEER`, `INSCRIPCIONES_LEER`, `NOTAS_LEER`, `COLEGIATURAS_LEER` | Solo su perfil, resumen, historial, estado general, inscripciones, cursos inscritos, notas y colegiaturas |
+| `DOCENTE` | `CURSOS_LEER`, `INSCRIPCIONES_LEER`, `NOTAS_LEER`, `NOTAS_CREAR`, `NOTAS_EDITAR`, `NOTAS_CAMBIAR_ESTADO` | Solo sus cursos asignados, alumnos inscritos en esos cursos y notas de esos cursos |
+| Otros roles | Sin asignacion automatica | Determinado por sus permisos manuales y por las restricciones de alcance aplicables |
+
+La pertenencia se resuelve en el servidor comparando, sin distinguir mayusculas, `usuario.email` con `estudiante.correo` o `docente.email`. Si no existe esa asociacion, el acceso de alcance se deniega. Para notas, colegiaturas e inscripciones, las rutas por ID consultan la relacion persistida antes de responder; cambiar el ID de la URL no permite acceder a otro estudiante. Los listados globales de estudiantes, cursos, inscripciones, notas y colegiaturas quedan reservados a ADMIN. Un docente debe ser el docente asignado al curso para consultar o modificar sus notas.
 | Spring Security stateless | Implementado |
 | JWT | Implementado |
 | Swagger / OpenAPI | Implementado |

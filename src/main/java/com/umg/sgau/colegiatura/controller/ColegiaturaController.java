@@ -17,6 +17,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -38,6 +39,7 @@ public class ColegiaturaController {
     }
 
     @PostMapping
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<ColegiaturaResponseDTO> crear(
             @Valid @RequestBody ColegiaturaCreateRequestDTO request) {
         Colegiatura colegiatura = ColegiaturaMapper.toEntity(request);
@@ -48,11 +50,13 @@ public class ColegiaturaController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@accessScope.puedeLeerColegiatura(authentication, #id)")
     public ResponseEntity<ColegiaturaResponseDTO> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(ColegiaturaMapper.toResponseDTO(colegiaturaService.obtenerPorId(id)));
     }
 
     @GetMapping
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<Page<ColegiaturaResponseDTO>> listar(
             @RequestParam(required = false) Long estudianteId,
             @RequestParam(required = false) Integer cicloAnio,
@@ -73,6 +77,7 @@ public class ColegiaturaController {
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<ColegiaturaResponseDTO> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody ColegiaturaUpdateRequestDTO request) {
@@ -83,6 +88,7 @@ public class ColegiaturaController {
     }
 
     @PatchMapping("/{id}/pago")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<ColegiaturaResponseDTO> registrarPago(
             @PathVariable Long id,
             @Valid @RequestBody ColegiaturaPagoRequestDTO request) {
@@ -91,6 +97,7 @@ public class ColegiaturaController {
     }
 
     @PatchMapping("/{id}/estado")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<ColegiaturaResponseDTO> cambiarEstado(
             @PathVariable Long id,
             @Valid @RequestBody ColegiaturaStatusRequestDTO request) {
@@ -99,17 +106,20 @@ public class ColegiaturaController {
     }
 
     @GetMapping("/pendientes")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<List<ColegiaturaResponseDTO>> obtenerPendientes() {
         return ResponseEntity.ok(
                 ColegiaturaMapper.toResponseDTOList(colegiaturaService.obtenerPendientes()));
     }
 
     @GetMapping("/saldos")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<List<BigDecimal>> obtenerSaldosPendientes() {
         return ResponseEntity.ok(colegiaturaService.obtenerSaldosPendientes());
     }
 
     @GetMapping("/estudiante/{estudianteId}")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #estudianteId)")
     public ResponseEntity<List<ColegiaturaResponseDTO>> obtenerHistorialPorEstudiante(
             @PathVariable Long estudianteId) {
         return ResponseEntity.ok(
@@ -118,6 +128,7 @@ public class ColegiaturaController {
     }
 
     @GetMapping("/estudiante/{estudianteId}/activas")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #estudianteId)")
     public ResponseEntity<Page<ColegiaturaResponseDTO>> obtenerActivasPorEstudiante(
             @PathVariable Long estudianteId,
             Pageable pageable) {
@@ -127,6 +138,7 @@ public class ColegiaturaController {
     }
 
     @GetMapping("/estudiante/{estudianteId}/pendientes")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #estudianteId)")
     public ResponseEntity<Page<ColegiaturaResponseDTO>> obtenerPendientesPorEstudiante(
             @PathVariable Long estudianteId,
             Pageable pageable) {
@@ -136,6 +148,7 @@ public class ColegiaturaController {
     }
 
     @GetMapping("/estudiante/{estudianteId}/estado-cuenta")
+    @PreAuthorize("@accessScope.esEstudiantePropietario(authentication, #estudianteId)")
     public ResponseEntity<EstadoCuentaResponseDTO> obtenerEstadoCuenta(
             @PathVariable Long estudianteId) {
         return ResponseEntity.ok(

@@ -13,6 +13,10 @@ import java.util.List;
 @Repository
 public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> {
 
+    boolean existsByEstudiante_IdAndCurso_IdAndActivoTrue(Long estudianteId, Long cursoId);
+    boolean existsByIdAndEstudiante_Id(Long id, Long estudianteId);
+    boolean existsByIdAndCurso_Docente_Id(Long id, Long docenteId);
+
     Page<Inscripcion> findByEstudiante_Id(Long estudianteId, Pageable pageable);
 
     default Page<Inscripcion> findByEstudianteId(Long estudianteId, Pageable pageable) {

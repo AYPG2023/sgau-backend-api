@@ -6,6 +6,7 @@ import com.umg.sgau.auth.dto.PerfilResponseDTO;
 import com.umg.sgau.auth.dto.RegisterRequestDTO;
 import com.umg.sgau.config.JwtService;
 import com.umg.sgau.rol.entity.Rol;
+import com.umg.sgau.permiso.entity.Permiso;
 import com.umg.sgau.usuario.dto.UsuarioResponseDTO;
 import com.umg.sgau.usuario.entity.Usuario;
 import com.umg.sgau.usuario.mapper.UsuarioMapper;
@@ -64,6 +65,7 @@ public class AuthService {
                     .nombre(usuario.getNombre())
                     .apellido(usuario.getApellido())
                     .roles(obtenerCodigosRolesActivos(usuario))
+                    .permisos(obtenerCodigosPermisosActivos(usuario))
                     .build();
         } catch (AuthenticationException exception) {
             throw new BadCredentialsException("Credenciales invalidas");
@@ -79,6 +81,7 @@ public class AuthService {
                 .nombre(usuario.getNombre())
                 .apellido(usuario.getApellido())
                 .roles(obtenerCodigosRolesActivos(usuario))
+                .permisos(obtenerCodigosPermisosActivos(usuario))
                 .activo(usuario.getActivo())
                 .build();
     }
@@ -111,6 +114,15 @@ public class AuthService {
         return usuario.getRoles().stream()
                 .filter(rol -> Boolean.TRUE.equals(rol.getActivo()))
                 .map(Rol::getCodigo)
+                .collect(Collectors.toSet());
+    }
+
+    private Set<String> obtenerCodigosPermisosActivos(Usuario usuario) {
+        return usuario.getRoles().stream()
+                .filter(rol -> Boolean.TRUE.equals(rol.getActivo()))
+                .flatMap(rol -> rol.getPermisos().stream())
+                .filter(permiso -> Boolean.TRUE.equals(permiso.getActivo()))
+                .map(Permiso::getCodigo)
                 .collect(Collectors.toSet());
     }
 }
