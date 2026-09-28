@@ -1,0 +1,143 @@
+{
+  "info": {
+    "name": "SGAU Backend API",
+    "description": "Autenticacion y autoservicio de perfil. Las operaciones /api/auth/me se autorizan con JWT y no requieren permisos administrativos.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login - obtener JWT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login exitoso', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.expect(body.permisos).to.be.an('array');",
+                  "if (body.accessToken) pm.collectionVariables.set('jwtToken', body.accessToken);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/login",
+            "description": "Inicia sesion y guarda el token en jwtToken. La respuesta incluye roles y permisos efectivos."
+          },
+          "response": []
+        },
+        {
+          "name": "Consultar mi perfil",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }]
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "Devuelve usuarioId, username, email, nombre, apellido, roles y permisos efectivos. Conserva el campo id por compatibilidad."
+          },
+          "response": []
+        },
+        {
+          "name": "Actualizar mi perfil",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Perfil actualizado', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.expect(body).to.have.property('usuarioId');",
+                  "pm.expect(body).to.have.property('roles');",
+                  "pm.expect(body).to.have.property('permisos');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{newUsername}}\",\n  \"email\": \"{{newEmail}}\",\n  \"nombre\": \"{{newNombre}}\",\n  \"apellido\": \"{{newApellido}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/me",
+            "description": "Modifica solo datos personales. No admite roles, permisos, estado ni contrasena. Si cambia username, requiereNuevoLogin sera true y debe autenticarse otra vez. No requiere USUARIOS_EDITAR."
+          },
+          "response": []
+        },
+        {
+          "name": "Cambiar mi contrasena",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Cambio exitoso sin contenido', () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }]
+            },
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"{{currentPassword}}\",\n  \"newPassword\": \"{{newPassword}}\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": "{{baseUrl}}/api/auth/me/password",
+            "description": "Verifica la contrasena actual y limita a cinco los errores en 15 minutos. El cambio no invalida JWT ya emitidos; vencen por su expiracion normal. Nunca se solicita el ID del usuario."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "jwtToken", "value": "" },
+    { "key": "username", "value": "usuario" },
+    { "key": "password", "value": "ContrasenaActual123*" },
+    { "key": "newUsername", "value": "nuevo_usuario" },
+    { "key": "newEmail", "value": "nuevo@correo.com" },
+    { "key": "newNombre", "value": "Nuevo nombre" },
+    { "key": "newApellido", "value": "Nuevo apellido" },
+    { "key": "currentPassword", "value": "ContrasenaActual123*" },
+    { "key": "newPassword", "value": "NuevaContrasena123*" }
+  ]
+}

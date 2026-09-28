@@ -10,7 +10,10 @@ import static org.mockito.Mockito.when;
 import com.umg.sgau.auth.dto.LoginRequestDTO;
 import com.umg.sgau.auth.dto.LoginResponseDTO;
 import com.umg.sgau.auth.dto.RegisterRequestDTO;
+import com.umg.sgau.auth.service.PasswordChangeRateLimiter;
 import com.umg.sgau.config.JwtService;
+import com.umg.sgau.docente.repository.DocenteRepository;
+import com.umg.sgau.estudiante.repository.EstudianteRepository;
 import com.umg.sgau.usuario.dto.UsuarioResponseDTO;
 import com.umg.sgau.rol.entity.Rol;
 import com.umg.sgau.usuario.entity.Usuario;
@@ -33,6 +36,7 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 @ExtendWith(MockitoExtension.class)
 class AuthServiceTest {
@@ -49,11 +53,24 @@ class AuthServiceTest {
     @Mock
     private JwtService jwtService;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private PasswordChangeRateLimiter passwordChangeRateLimiter;
+
+    @Mock
+    private EstudianteRepository estudianteRepository;
+
+    @Mock
+    private DocenteRepository docenteRepository;
+
     private AuthService authService;
 
     @BeforeEach
     void setUp() {
-        authService = new AuthService(authenticationManager, usuarioRepository, usuarioService, jwtService);
+        authService = new AuthService(authenticationManager, usuarioRepository, usuarioService, jwtService,
+                passwordEncoder, passwordChangeRateLimiter, estudianteRepository, docenteRepository);
     }
 
     @Test

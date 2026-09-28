@@ -15,6 +15,7 @@ import lombok.Setter;
 public class PerfilResponseDTO {
 
     private Long id;
+    private Long usuarioId;
     private String username;
     private String email;
     private String nombre;
@@ -22,4 +23,5 @@ public class PerfilResponseDTO {
     private Set<String> roles;
     private Set<String> permisos;
     private Boolean activo;
+    private Boolean requiereNuevoLogin;
 }

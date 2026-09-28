@@ -709,6 +709,21 @@ Ejemplo de campos de sesion agregados sin cambiar los existentes:
 
 `GET /api/auth/me` devuelve igualmente `permisos` junto con `id`, `username`, `email`, `nombre`, `apellido`, `roles` y `activo`. El arreglo es la union sin duplicados de permisos activos pertenecientes a roles activos.
 
+### Autoservicio de perfil
+
+`GET /api/auth/me` requiere JWT y devuelve `usuarioId`, `username`, `email`, `nombre`, `apellido`, `roles` y `permisos` (se conserva tambien el campo historico `id`). `PUT /api/auth/me` permite actualizar solo username, email, nombre y apellido; identifica al usuario por el token y no necesita `USUARIOS_EDITAR`. Si el email vincula su usuario con un registro de estudiante o docente, tambien se actualiza ese correo asociado dentro de la misma transaccion para conservar el acceso a sus propios datos. La respuesta mantiene el perfil e incluye `requiereNuevoLogin`: vale `true` cuando se cambia el username, porque los JWT anteriores usan el username como sujeto y dejan de validar.
+
+```json
+{
+  "username": "nuevo_usuario",
+  "email": "nuevo@correo.com",
+  "nombre": "Nuevo nombre",
+  "apellido": "Nuevo apellido"
+}
+```
+
+`PUT /api/auth/me/password` acepta `currentPassword` y `newPassword`, exige la contrasena vigente y aplica la politica actual del registro (entre 8 y 72 caracteres). Tras cinco contrasenas actuales incorrectas se bloquean nuevos intentos durante 15 minutos. Un cambio exitoso responde `204 No Content` y registra un evento de seguridad sin datos de contrasena. Los JWT existentes siguen validos hasta su expiracion; el usuario debe iniciar sesion otra vez para usar la nueva contrasena. Las respuestas nunca incluyen hashes ni valores de contrasena.
+
 ### Matriz base por rol y alcance de datos
 
 Los roles son dinamicos. El inicializador reconoce `ADMIN`, `ESTUDIANTE` y `DOCENTE`; cualquier otro rol existente conserva sus asignaciones manuales. Para evitar sobrescribir administracion realizada desde la aplicacion, la matriz base de `ESTUDIANTE` y `DOCENTE` solo se aplica cuando el rol aun no tiene permisos. Las siguientes ejecuciones no reemplazan ni eliminan sus asignaciones. `ADMIN` recibe de forma aditiva el catalogo completo.
