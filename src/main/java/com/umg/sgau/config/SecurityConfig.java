@@ -65,6 +65,7 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auditoria/**").hasAuthority(PermissionCatalog.AUDITORIA_LEER)
                         .requestMatchers(HttpMethod.PUT, "/api/usuarios/*/roles").hasAuthority(PermissionCatalog.USUARIOS_ASIGNAR_ROLES)
                         .requestMatchers(HttpMethod.GET, "/api/usuarios/**").hasAuthority(PermissionCatalog.USUARIOS_LEER)
                         .requestMatchers(HttpMethod.POST, "/api/usuarios/**").hasAuthority(PermissionCatalog.USUARIOS_CREAR)

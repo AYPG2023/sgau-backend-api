@@ -1,7 +1,9 @@
 package com.umg.sgau.config;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.umg.sgau.carrera.entity.Carrera;
@@ -33,11 +35,9 @@ import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest(properties = "jwt.secret=clave-de-pruebas-segura-de-al-menos-32-bytes")
 @AutoConfigureMockMvc
-@Transactional
 class RoleScopeIntegrationTest {
 
     @Autowired MockMvc mockMvc;
@@ -81,6 +81,12 @@ class RoleScopeIntegrationTest {
         usuario("admin_scope", "admin@sgau.test", adminRol);
 
         String estudianteToken = login("estudiante_scope");
+        autorizado(get("/api/academico/estudiante/me"), estudianteToken, 200);
+        autorizado(get("/api/academico/estudiante/me/inscripciones"), estudianteToken, 200);
+        autorizado(get("/api/academico/estudiante/me/cursos"), estudianteToken, 200);
+        autorizado(get("/api/academico/estudiante/me/notas"), estudianteToken, 200);
+        autorizado(get("/api/academico/estudiante/me/colegiaturas"), estudianteToken, 200);
+        autorizado(get("/api/auditoria"), estudianteToken, 403);
         autorizado(get("/api/notas/" + notaPropia.getId()), estudianteToken, 200);
         autorizado(get("/api/colegiaturas/" + cuotaPropia.getId()), estudianteToken, 200);
         autorizado(get("/api/cursos/" + propioDocente.getId()), estudianteToken, 200);
@@ -91,6 +97,16 @@ class RoleScopeIntegrationTest {
         autorizado(get("/api/colegiaturas/estudiante/" + ajeno.getId()), estudianteToken, 403);
 
         String docenteToken = login("docente_scope");
+        autorizado(get("/api/academico/docente/me/cursos"), docenteToken, 200);
+        autorizado(get("/api/academico/docente/me/cursos/" + propioDocente.getId() + "/estudiantes"), docenteToken, 200);
+        autorizado(get("/api/academico/docente/me/cursos/" + ajenoDocente.getId() + "/estudiantes"), docenteToken, 403);
+        autorizado(post("/api/notas").contentType(MediaType.APPLICATION_JSON).content("""
+                {"estudianteId":%d,"cursoId":%d,"cicloAnio":2026,"tipoEvaluacion":"QUIZ","calificacion":91}
+                """.formatted(propio.getId(), propioDocente.getId())), docenteToken, 201);
+        autorizado(post("/api/notas").contentType(MediaType.APPLICATION_JSON).content("""
+                {"estudianteId":%d,"cursoId":%d,"cicloAnio":2026,"tipoEvaluacion":"QUIZ","calificacion":91}
+                """.formatted(ajeno.getId(), ajenoDocente.getId())), docenteToken, 403);
+        autorizado(get("/api/auditoria"), docenteToken, 403);
         autorizado(get("/api/cursos/docente/" + docente.getId()), docenteToken, 200);
         autorizado(get("/api/notas/curso/" + propioDocente.getId()), docenteToken, 200);
         autorizado(get("/api/notas/" + notaPropia.getId()), docenteToken, 200);
@@ -99,6 +115,16 @@ class RoleScopeIntegrationTest {
         autorizado(get("/api/colegiaturas/" + cuotaPropia.getId()), docenteToken, 403);
 
         String adminToken = login("admin_scope");
+        autorizado(get("/api/auditoria"), adminToken, 200);
+        mockMvc.perform(get("/api/auditoria").header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content[0].username").value("docente_scope"))
+                .andExpect(jsonPath("$.content[0].accion").value("CREAR"))
+                .andExpect(jsonPath("$.content[0].modulo").value("NOTAS"))
+                .andExpect(jsonPath("$.content[0].tipoEntidad").value("NOTA"))
+                .andExpect(jsonPath("$.content[0].entidadId").isNotEmpty())
+                .andExpect(jsonPath("$.content[0].cambiosAntes").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("password"))))
+                .andExpect(jsonPath("$.content[0].cambiosDespues").value(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("token"))));
         autorizado(get("/api/usuarios"), adminToken, 200);
         autorizado(get("/api/notas/" + notaAjena.getId()), adminToken, 200);
         autorizado(get("/api/colegiaturas/" + cuotaAjena.getId()), adminToken, 200);

@@ -4,6 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 public final class PermissionCatalog {
+    public static final String AUDITORIA_LEER = "AUDITORIA_LEER";
 
     private PermissionCatalog() {
     }
@@ -56,6 +57,7 @@ public final class PermissionCatalog {
 
     public static Map<String, String> todos() {
         Map<String, String> permisos = new LinkedHashMap<>();
+        permisos.put(AUDITORIA_LEER, "Consultar auditoria");
         agregarModulo(permisos, "USUARIOS", "usuarios", "CREAR", "LEER", "EDITAR", "ELIMINAR", "ASIGNAR_ROLES");
         agregarModulo(permisos, "ROLES", "roles", "CREAR", "LEER", "EDITAR", "CAMBIAR_ESTADO", "ASIGNAR_PERMISOS");
         agregarModulo(permisos, "PERMISOS", "permisos", "CREAR", "LEER", "EDITAR", "CAMBIAR_ESTADO");

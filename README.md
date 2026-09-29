@@ -354,6 +354,70 @@ Respuesta:
 
 ## Principales endpoints
 
+### Consultas academicas propias
+
+Estas rutas resuelven el registro academico comparando el correo del usuario autenticado con
+`docentes.email` o `estudiantes.correo`. Nunca reciben un ID de docente o estudiante elegido por
+el cliente. Si no existe el vinculo responden `404` con
+`code: VINCULACION_ACADEMICA_NO_ENCONTRADA`; una coleccion sin datos responde `200` vacia.
+
+| Rol | Ruta | Permiso |
+|---|---|---|
+| DOCENTE | `GET /api/academico/docente/me` | `CURSOS_LEER` |
+| DOCENTE | `GET /api/academico/docente/me/cursos` | `CURSOS_LEER` |
+| DOCENTE | `GET /api/academico/docente/me/cursos/{cursoId}/estudiantes` | `INSCRIPCIONES_LEER` |
+| DOCENTE | `GET /api/academico/docente/me/cursos/{cursoId}/notas` | `NOTAS_LEER` |
+| ESTUDIANTE | `GET /api/academico/estudiante/me` | `ESTUDIANTES_LEER` |
+| ESTUDIANTE | `GET /api/academico/estudiante/me/inscripciones` | `INSCRIPCIONES_LEER` |
+| ESTUDIANTE | `GET /api/academico/estudiante/me/cursos` | `CURSOS_LEER` |
+| ESTUDIANTE | `GET /api/academico/estudiante/me/notas` | `NOTAS_LEER` |
+| ESTUDIANTE | `GET /api/academico/estudiante/me/promedio` | `NOTAS_LEER` |
+| ESTUDIANTE | `GET /api/academico/estudiante/me/colegiaturas` | `COLEGIATURAS_LEER` |
+| ESTUDIANTE | `GET /api/academico/estudiante/me/estado-cuenta` | `COLEGIATURAS_LEER` |
+
+Los cursos incluyen `carreraId`, `carreraCodigo` y `carreraNombre`. Las inscripciones y notas
+incluyen nombres legibles de curso y estudiante. El modelo persistente no contiene horario, por
+lo que la API no publica un campo ficticio.
+
+Ejemplo de curso propio:
+
+```json
+{
+  "id": 12,
+  "codigo": "PROG-01",
+  "nombre": "Programacion I",
+  "creditos": 5,
+  "horasSemanales": 6,
+  "cicloAnio": 2026,
+  "activo": true,
+  "carreraId": 2,
+  "carreraCodigo": "ISC",
+  "carreraNombre": "Ingenieria en Sistemas"
+}
+```
+
+### Auditoria
+
+`GET /api/auditoria` es paginado y admite `desde`, `hasta`, `usuarioId`, `username`, `modulo`,
+`accion`, `tipoEntidad` y `entidadId`. Requiere `AUDITORIA_LEER`, permiso agregado al catalogo y
+asignado de forma aditiva solamente a `ADMIN`. La API no expone operaciones de escritura sobre
+eventos.
+
+Las operaciones HTTP `POST`, `PUT`, `PATCH` y `DELETE` confirmadas por los controladores se
+registran una sola vez. Login queda excluido porque no cambia datos. Passwords, tokens,
+Authorization, secretos y credenciales se eliminan recursivamente de los cambios serializados.
+Para registros existentes, `cambiosAntes` y `cambiosDespues` contienen snapshots escalares y los
+IDs de sus relaciones; para creaciones, `cambiosAntes` contiene la solicitud sanitizada.
+El registro ocurre al regresar exitosamente la operacion de negocio, cuando su transaccion ya
+termino, y usa `REQUIRES_NEW`. Si la escritura de auditoria falla, se registra el error tecnico sin
+revertir ni dejar a medias el cambio de negocio ya confirmado. Las operaciones fallidas no crean
+un evento `EXITOSO`.
+
+El esquema vigente se administra con `spring.jpa.hibernate.ddl-auto=update`; la entidad
+`AuditoriaEvento` crea la tabla e indices. Para ambientes que aplican DDL manual existe el script
+de referencia `src/main/resources/db/migration-manual/V1__create_auditoria_eventos.sql`, ubicado
+fuera del directorio automatico de Flyway porque este proyecto no usa Flyway.
+
 ### Autenticacion
 
 | Metodo | Ruta | Uso |

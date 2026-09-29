@@ -96,11 +96,11 @@ public class AccessScopeService {
         return esAdmin(authentication) || idDocente(authentication).filter(docenteId::equals).isPresent();
     }
 
-    private Optional<Long> idEstudiante(Authentication authentication) {
+    public Optional<Long> idEstudiante(Authentication authentication) {
         return correo(authentication).flatMap(estudianteRepository::findByCorreoIgnoreCase).map(e -> e.getId());
     }
 
-    private Optional<Long> idDocente(Authentication authentication) {
+    public Optional<Long> idDocente(Authentication authentication) {
         return correo(authentication).flatMap(docenteRepository::findByEmailIgnoreCase).map(d -> d.getId());
     }
 
