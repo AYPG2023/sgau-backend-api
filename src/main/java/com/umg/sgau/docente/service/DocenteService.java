@@ -9,6 +9,7 @@ import com.umg.sgau.docente.entity.Docente;
 
 public interface DocenteService {
 	Docente crear(Docente docente);
+	Docente crearOVincular(Docente docente, Long usuarioId, Boolean accesoApp, String username, String password);
 	Docente obtenerPorId(Long id);
 	
 	List<Docente> obtenerTodos();

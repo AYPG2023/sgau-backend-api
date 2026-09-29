@@ -44,7 +44,8 @@ public class DocenteController {
             @Valid @RequestBody DocenteCreateRequestDTO request) {
 
         Docente docenteCreado =
-                docenteService.crear(DocenteMapper.aEntidad(request));
+                docenteService.crearOVincular(DocenteMapper.aEntidad(request), request.getUsuarioId(),
+                        request.getAccesoApp(), request.getUsername(), request.getPassword());
 
         DocenteResponseDTO response =
                 DocenteMapper.aResponseDTO(docenteCreado);

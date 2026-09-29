@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.umg.sgau.colegiatura.entity.Colegiatura;
 import com.umg.sgau.inscripcion.entity.Inscripcion;
 import com.umg.sgau.nota.entity.Nota;
+import com.umg.sgau.usuario.entity.Usuario;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -59,6 +60,11 @@ public class Estudiante {
     @Builder.Default
     @Column(nullable = false)
     private Boolean activo = true;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id", unique = true)
+    @JsonIgnore
+    private Usuario usuario;
 
     @OneToMany(mappedBy = "estudiante", fetch = FetchType.LAZY)
     @JsonIgnore

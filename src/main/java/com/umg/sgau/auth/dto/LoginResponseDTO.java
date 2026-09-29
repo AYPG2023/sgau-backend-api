@@ -18,6 +18,8 @@ public class LoginResponseDTO {
     private String tokenType;
     private Long expiresIn;
     private Long usuarioId;
+    private Long docenteId;
+    private Long estudianteId;
     private String username;
     private String nombre;
     private String apellido;

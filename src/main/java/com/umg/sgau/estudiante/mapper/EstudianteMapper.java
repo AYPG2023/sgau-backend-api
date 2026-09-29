@@ -59,6 +59,8 @@ public final class EstudianteMapper {
                 .telefono(estudiante.getTelefono())
                 .direccion(estudiante.getDireccion())
                 .activo(estudiante.getActivo())
+                .usuarioId(estudiante.getUsuario() == null ? null : estudiante.getUsuario().getId())
+                .accesoApp(estudiante.getUsuario() != null && Boolean.TRUE.equals(estudiante.getUsuario().getActivo()))
                 .fechaCreacion(estudiante.getFechaCreacion())
                 .fechaActualizacion(estudiante.getFechaActualizacion())
                 .build();

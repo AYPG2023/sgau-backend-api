@@ -7,6 +7,7 @@ import com.umg.sgau.colegiatura.repository.ColegiaturaRepository;
 import com.umg.sgau.config.AccessScopeService;
 import com.umg.sgau.curso.entity.Curso;
 import com.umg.sgau.curso.repository.CursoRepository;
+import com.umg.sgau.carrera.repository.CarreraRepository;
 import com.umg.sgau.docente.entity.Docente;
 import com.umg.sgau.docente.repository.DocenteRepository;
 import com.umg.sgau.estudiante.entity.Estudiante;
@@ -32,18 +33,20 @@ public class AcademicoSelfService {
     private final DocenteRepository docentes;
     private final EstudianteRepository estudiantes;
     private final CursoRepository cursos;
+    private final CarreraRepository carreras;
     private final InscripcionRepository inscripciones;
     private final NotaRepository notas;
     private final ColegiaturaRepository colegiaturas;
 
     public AcademicoSelfService(AccessScopeService accessScope, DocenteRepository docentes,
-            EstudianteRepository estudiantes, CursoRepository cursos,
+            EstudianteRepository estudiantes, CursoRepository cursos, CarreraRepository carreras,
             InscripcionRepository inscripciones, NotaRepository notas,
             ColegiaturaRepository colegiaturas) {
         this.accessScope = accessScope;
         this.docentes = docentes;
         this.estudiantes = estudiantes;
         this.cursos = cursos;
+        this.carreras = carreras;
         this.inscripciones = inscripciones;
         this.notas = notas;
         this.colegiaturas = colegiaturas;
@@ -59,14 +62,33 @@ public class AcademicoSelfService {
         return cursos.findByDocente_Id(docenteActual(auth).getId()).stream().map(this::curso).toList();
     }
 
+    public List<AcademicoDTOs.Curso> cursosDocente(Authentication auth, Integer cicloAnio) {
+        Docente docente = docenteActual(auth);
+        return (cicloAnio == null ? cursos.findByDocente_Id(docente.getId())
+                : cursos.findByDocente_IdAndCicloAnio(docente.getId(), cicloAnio)).stream().map(this::curso).toList();
+    }
+
     public Page<AcademicoDTOs.Inscripcion> alumnosCurso(Authentication auth, Long cursoId, Pageable pageable) {
         exigirCursoDocente(auth, cursoId);
         return inscripciones.findByCurso_IdAndActivoTrue(cursoId, pageable).map(this::inscripcion);
     }
 
+    public Page<AcademicoDTOs.Inscripcion> alumnosCurso(Authentication auth, Long cursoId, Integer cicloAnio, Pageable pageable) {
+        Curso c = exigirCursoDocente(auth, cursoId);
+        if (cicloAnio != null && !cicloAnio.equals(c.getCicloAnio())) throw new org.springframework.security.access.AccessDeniedException("El ciclo no corresponde al curso asignado.");
+        return cicloAnio == null ? inscripciones.findByCurso_IdAndActivoTrue(cursoId, pageable).map(this::inscripcion)
+                : inscripciones.findByCurso_IdAndCicloAnioAndActivoTrue(cursoId, cicloAnio, pageable).map(this::inscripcion);
+    }
+
     public Page<AcademicoDTOs.Nota> notasCurso(Authentication auth, Long cursoId, Pageable pageable) {
         exigirCursoDocente(auth, cursoId);
         return notas.findByCurso_Id(cursoId, pageable).map(this::nota);
+    }
+
+    public Page<AcademicoDTOs.Nota> notasCurso(Authentication auth, Long cursoId, Integer cicloAnio, Pageable pageable) {
+        Curso c = exigirCursoDocente(auth, cursoId);
+        if (cicloAnio != null && !cicloAnio.equals(c.getCicloAnio())) throw new org.springframework.security.access.AccessDeniedException("El ciclo no corresponde al curso asignado.");
+        return notas.findValidasByCurso(cursoId, cicloAnio, pageable).map(this::nota);
     }
 
     public AcademicoDTOs.EstudiantePerfil estudiante(Authentication auth) {
@@ -86,6 +108,41 @@ public class AcademicoSelfService {
         pagina.getContent().stream().filter(i -> i.getCurso() != null)
                 .forEach(i -> unicos.putIfAbsent(i.getCurso().getId(), i.getCurso()));
         return unicos.values().stream().map(this::curso).toList();
+    }
+
+    public AcademicoDTOs.Carrera carreraEstudiante(Authentication auth) {
+        Inscripcion i = inscripcionActual(estudianteActual(auth));
+        var c = i.getCarrera();
+        return new AcademicoDTOs.Carrera(c.getId(), c.getCodigo(), c.getNombre(), c.getDescripcion(), c.getDuracionAnios(), i.getCicloAnio());
+    }
+
+    public AcademicoDTOs.PlanCarrera planCarrera(Authentication auth) {
+        Estudiante e = estudianteActual(auth);
+        Inscripcion actual = inscripcionActual(e);
+        var carrera = carreras.findById(actual.getCarrera().getId())
+                .orElseThrow(() -> new VinculacionAcademicaNoEncontradaException("carrera"));
+        List<Inscripcion> activas = inscripciones.findByEstudiante_IdAndActivoTrueOrderByCicloAnioDescFechaInscripcionDesc(e.getId());
+        var cursosInscritos = activas.stream().filter(i -> i.getCurso() != null)
+                .collect(java.util.stream.Collectors.toMap(i -> i.getCurso().getId(), Inscripcion::getCurso, (a,b)->a, LinkedHashMap::new));
+        List<Curso> plan = cursos.findByCarrera_IdAndActivoTrueOrderByCicloAnioDescNombreAsc(carrera.getId());
+        List<AcademicoDTOs.CursoPlan> detalle = plan.stream().map(c -> {
+            var d=c.getDocente();
+            return new AcademicoDTOs.CursoPlan(c.getId(),c.getCodigo(),c.getNombre(),c.getDescripcion(),c.getCreditos(),
+                    c.getHorasSemanales(),c.getCicloAnio(),cursosInscritos.containsKey(c.getId()),d==null?null:d.getId(),
+                    d==null?null:d.getNombre()+" "+d.getApellido());
+        }).toList();
+        int totalPlan=plan.stream().mapToInt(Curso::getCreditos).sum();
+        int totalInscritos=cursosInscritos.values().stream().mapToInt(Curso::getCreditos).sum();
+        var resumen=new AcademicoDTOs.Carrera(carrera.getId(),carrera.getCodigo(),carrera.getNombre(),carrera.getDescripcion(),carrera.getDuracionAnios(),actual.getCicloAnio());
+        return new AcademicoDTOs.PlanCarrera(resumen,detalle,cursosInscritos.values().stream().map(this::curso).toList(),totalPlan,totalInscritos);
+    }
+
+    public List<AcademicoDTOs.DocenteCurso> docentesEstudiante(Authentication auth) {
+        Estudiante e=estudianteActual(auth);
+        return inscripciones.findByEstudiante_IdAndActivoTrueOrderByCicloAnioDescFechaInscripcionDesc(e.getId()).stream()
+                .filter(i->i.getCurso()!=null && i.getCurso().getDocente()!=null).map(i->{var c=i.getCurso();var d=c.getDocente();
+                    return new AcademicoDTOs.DocenteCurso(d.getId(),d.getCodigoDocente(),d.getNombre(),d.getApellido(),d.getEmail(),d.getEspecialidad(),c.getId(),c.getCodigo(),c.getNombre(),i.getCicloAnio());
+                }).toList();
     }
 
     public Page<AcademicoDTOs.Nota> notasEstudiante(Authentication auth, Pageable pageable) {
@@ -130,10 +187,17 @@ public class AcademicoSelfService {
         return estudiantes.findById(id).orElseThrow(() -> new VinculacionAcademicaNoEncontradaException("estudiante"));
     }
 
-    private void exigirCursoDocente(Authentication auth, Long cursoId) {
+    private Curso exigirCursoDocente(Authentication auth, Long cursoId) {
         Long docenteId = docenteActual(auth).getId();
-        if (!cursos.existsByIdAndDocente_Id(cursoId, docenteId))
+        Curso curso = cursos.findById(cursoId).orElseThrow(() -> new com.umg.sgau.curso.exception.CursoNoEncontradoException(cursoId));
+        if (curso.getDocente() == null || !docenteId.equals(curso.getDocente().getId()))
             throw new org.springframework.security.access.AccessDeniedException("El curso no esta asignado al docente autenticado.");
+        return curso;
+    }
+
+    private Inscripcion inscripcionActual(Estudiante e) {
+        return inscripciones.findByEstudiante_IdAndActivoTrueOrderByCicloAnioDescFechaInscripcionDesc(e.getId()).stream()
+                .findFirst().orElseThrow(() -> new VinculacionAcademicaNoEncontradaException("carrera"));
     }
 
     private AcademicoDTOs.Curso curso(Curso c) {

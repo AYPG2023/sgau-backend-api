@@ -33,6 +33,8 @@ public interface CursoRepository extends JpaRepository<Curso, Long> {
     }
 
     List<Curso> findByDocente_Id(Long docenteId);
+    List<Curso> findByDocente_IdAndCicloAnio(Long docenteId, Integer cicloAnio);
+    List<Curso> findByCarrera_IdAndActivoTrueOrderByCicloAnioDescNombreAsc(Long carreraId);
 
     default List<Curso> findByDocenteId(Long docenteId) {
         return findByDocente_Id(docenteId);

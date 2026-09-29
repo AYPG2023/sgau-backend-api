@@ -1,177 +1,53 @@
 package com.umg.sgau.estudiante.serviceimpl;
 
+import com.umg.sgau.academico.service.AcademicAccountLinkService;
 import com.umg.sgau.estudiante.entity.Estudiante;
 import com.umg.sgau.estudiante.exception.EstudianteNoEncontradoException;
 import com.umg.sgau.estudiante.repository.EstudianteRepository;
 import com.umg.sgau.estudiante.service.EstudianteService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import lombok.RequiredArgsConstructor;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-@Service
-@RequiredArgsConstructor
-@Transactional
+@Service @RequiredArgsConstructor @Transactional
 public class EstudianteServiceImpl implements EstudianteService {
-
     private final EstudianteRepository estudianteRepository;
-
-    @Override
-    public Estudiante crear(Estudiante estudiante) {
-
-        if (estudianteRepository.existsByCodigoEstudiantil(
-                estudiante.getCodigoEstudiantil())) {
-            throw new IllegalArgumentException(
-                    "El código estudiantil ya existe.");
-        }
-
-        if (estudianteRepository.existsByNumeroIdentificacion(
-                estudiante.getNumeroIdentificacion())) {
-            throw new IllegalArgumentException(
-                    "El número de identificación ya existe.");
-        }
-
-        if (estudianteRepository.existsByCorreo(
-                estudiante.getCorreo())) {
-            throw new IllegalArgumentException(
-                    "El correo electrónico ya existe.");
-        }
-
-        estudiante.setActivo(true);
-
-        return estudianteRepository.save(estudiante);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Estudiante obtenerPorId(Long id) {
-
-        return estudianteRepository.findById(id)
-                .orElseThrow(() -> new EstudianteNoEncontradoException(id));
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public Page<Estudiante> listar(
-            String texto,
-            Boolean activo,
-            Pageable pageable) {
-
-        if (texto != null) {
-            texto = texto.trim();
-
-            if (texto.isBlank()) {
-                texto = null;
+    private final AcademicAccountLinkService accountLinks;
+    @Override public Estudiante crear(Estudiante e) { return crearOVincular(e,null,false,null,null); }
+    @Override public Estudiante crearOVincular(Estudiante e, Long usuarioId, Boolean acceso, String username, String password) {
+        Estudiante codigo=estudianteRepository.findByCodigoEstudiantil(e.getCodigoEstudiantil()).orElse(null);
+        Estudiante doc=estudianteRepository.findByNumeroIdentificacion(e.getNumeroIdentificacion()).orElse(null);
+        Estudiante correo=estudianteRepository.findByCorreoIgnoreCase(e.getCorreo()).orElse(null);
+        if(codigo!=null||doc!=null||correo!=null) {
+            if(codigo==null||doc==null||correo==null||!codigo.getId().equals(doc.getId())||!codigo.getId().equals(correo.getId()))
+                throw new IllegalArgumentException("El codigo, identificacion o correo pertenece a otro estudiante");
+            if(codigo.getUsuario()!=null) {
+                if(usuarioId==null||codigo.getUsuario().getId().equals(usuarioId)) return codigo;
+                throw new IllegalArgumentException("El estudiante ya esta vinculado a otro usuario");
             }
+            codigo.setUsuario(accountLinks.resolver(usuarioId,acceso,username,password,e.getCorreo(),e.getNombres(),e.getApellidos(),"ESTUDIANTE"));
+            return estudianteRepository.save(codigo);
         }
-
-        return estudianteRepository.buscar(
-                texto,
-                activo,
-                pageable
-        );
+        e.setUsuario(accountLinks.resolver(usuarioId,acceso,username,password,e.getCorreo(),e.getNombres(),e.getApellidos(),"ESTUDIANTE"));
+        e.setActivo(true); return estudianteRepository.save(e);
     }
-
-    @Override
-    public Estudiante actualizar(
-            Long id,
-            Estudiante estudiante) {
-
-        Estudiante estudianteActual = obtenerPorId(id);
-
-        if (estudianteRepository.existsByCodigoEstudiantilAndIdNot(
-                estudiante.getCodigoEstudiantil(), id)) {
-            throw new IllegalArgumentException(
-                    "El código estudiantil ya existe.");
-        }
-
-        if (estudianteRepository.existsByNumeroIdentificacionAndIdNot(
-                estudiante.getNumeroIdentificacion(), id)) {
-            throw new IllegalArgumentException(
-                    "El número de identificación ya existe.");
-        }
-
-        if (estudianteRepository.existsByCorreoAndIdNot(
-                estudiante.getCorreo(), id)) {
-            throw new IllegalArgumentException(
-                    "El correo electrónico ya existe.");
-        }
-
-        estudianteActual.setCodigoEstudiantil(
-                estudiante.getCodigoEstudiantil());
-
-        estudianteActual.setNumeroIdentificacion(
-                estudiante.getNumeroIdentificacion());
-
-        estudianteActual.setNombres(
-                estudiante.getNombres());
-
-        estudianteActual.setApellidos(
-                estudiante.getApellidos());
-
-        estudianteActual.setFechaNacimiento(
-                estudiante.getFechaNacimiento());
-
-        estudianteActual.setCorreo(
-                estudiante.getCorreo());
-
-        estudianteActual.setTelefono(
-                estudiante.getTelefono());
-
-        estudianteActual.setDireccion(
-                estudiante.getDireccion());
-
-        return estudianteRepository.save(estudianteActual);
+    @Override @Transactional(readOnly=true) public Estudiante obtenerPorId(Long id) { return estudianteRepository.findById(id).orElseThrow(()->new EstudianteNoEncontradoException(id)); }
+    @Override @Transactional(readOnly=true) public Page<Estudiante> listar(String q, Boolean activo, Pageable p) { return estudianteRepository.buscar(q==null||q.isBlank()?null:q.trim(),activo,p); }
+    @Override public Estudiante actualizar(Long id, Estudiante e) {
+        Estudiante a=obtenerPorId(id);
+        if(estudianteRepository.existsByCodigoEstudiantilAndIdNot(e.getCodigoEstudiantil(),id)) throw new IllegalArgumentException("Codigo estudiantil duplicado");
+        if(estudianteRepository.existsByNumeroIdentificacionAndIdNot(e.getNumeroIdentificacion(),id)) throw new IllegalArgumentException("Identificacion duplicada");
+        if(estudianteRepository.existsByCorreoAndIdNot(e.getCorreo(),id)) throw new IllegalArgumentException("Correo duplicado");
+        a.setCodigoEstudiantil(e.getCodigoEstudiantil()); a.setNumeroIdentificacion(e.getNumeroIdentificacion());
+        a.setNombres(e.getNombres()); a.setApellidos(e.getApellidos()); a.setFechaNacimiento(e.getFechaNacimiento());
+        a.setCorreo(e.getCorreo()); a.setTelefono(e.getTelefono()); a.setDireccion(e.getDireccion()); return estudianteRepository.save(a);
     }
-
-    @Override
-    public Estudiante cambiarEstado(
-            Long id,
-            Boolean activo) {
-
-        Estudiante estudiante = obtenerPorId(id);
-
-        estudiante.setActivo(activo);
-
-        return estudianteRepository.save(estudiante);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<Estudiante> obtenerActivos() {
-        return estudianteRepository.findAll()
-                .stream()
-                .filter(estudiante -> Boolean.TRUE.equals(estudiante.getActivo()))
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<String> obtenerCorreosActivos() {
-        return estudianteRepository.findAll()
-                .stream()
-                .filter(estudiante -> Boolean.TRUE.equals(estudiante.getActivo()))
-                .map(Estudiante::getCorreo)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public Estudiante obtenerResumenPorId(Long id) {
-
-        return obtenerPorId(id);
-    }
-
-    @Override
-    public Object obtenerHistorialAcademico(Long id) {
-
-        throw new UnsupportedOperationException(
-                "El historial académico estará disponible cuando el módulo de notas sea integrado."
-        );
-    }
-
+    @Override public Estudiante cambiarEstado(Long id,Boolean activo) { Estudiante e=obtenerPorId(id);e.setActivo(activo);return estudianteRepository.save(e); }
+    @Override @Transactional(readOnly=true) public List<Estudiante> obtenerActivos(){return estudianteRepository.findSeleccionables();}
+    @Override @Transactional(readOnly=true) public List<String> obtenerCorreosActivos(){return estudianteRepository.findSeleccionables().stream().map(Estudiante::getCorreo).toList();}
+    @Override public Estudiante obtenerResumenPorId(Long id){return obtenerPorId(id);}
+    @Override public Object obtenerHistorialAcademico(Long id){throw new UnsupportedOperationException("El historial academico aun no esta disponible");}
 }

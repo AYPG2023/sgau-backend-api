@@ -17,6 +17,21 @@ public final class AcademicoDTOs {
             Integer creditos, Integer horasSemanales, Integer cicloAnio, Boolean activo,
             Long carreraId, String carreraCodigo, String carreraNombre) {}
 
+    public record Carrera(Long id, String codigo, String nombre, String descripcion,
+            Integer duracionAnios, Integer cicloActual) {}
+
+    public record DocenteCurso(Long id, String codigo, String nombre, String apellido,
+            String email, String especialidad, Long cursoId, String cursoCodigo,
+            String cursoNombre, Integer cicloAnio) {}
+
+    public record CursoPlan(Long id, String codigo, String nombre, String descripcion,
+            Integer creditos, Integer horasSemanales, Integer cicloAnio,
+            Boolean inscrito, Long docenteId, String docenteNombre) {}
+
+    public record PlanCarrera(Carrera carrera, List<CursoPlan> cursosDisponibles,
+            List<Curso> cursosInscritos, Integer totalCreditosPlan,
+            Integer totalCreditosInscritos) {}
+
     public record Inscripcion(Long id, Long estudianteId, String estudianteCodigo,
             String estudianteNombre, Long cursoId, String cursoCodigo, String cursoNombre,
             Long carreraId, String carreraCodigo, String carreraNombre, String grado,

@@ -46,6 +46,8 @@ public final class DocenteMapper {
                 .telefono(docente.getTelefono())
                 .especialidad(docente.getEspecialidad())
                 .activo(docente.getActivo())
+                .usuarioId(docente.getUsuario() == null ? null : docente.getUsuario().getId())
+                .accesoApp(docente.getUsuario() != null && Boolean.TRUE.equals(docente.getUsuario().getActivo()))
                 .fechaCreacion(docente.getFechaCreacion())
                 .fechaActualizacion(docente.getFechaActualizacion())
                 .build();

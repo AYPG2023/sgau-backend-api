@@ -16,6 +16,15 @@ public interface NotaRepository extends JpaRepository<Nota, Long> {
     boolean existsByIdAndEstudiante_Id(Long id, Long estudianteId);
     boolean existsByIdAndCurso_Docente_Id(Long id, Long docenteId);
 
+    @Query("""
+            SELECT CASE WHEN COUNT(n)>0 THEN true ELSE false END FROM Nota n
+            WHERE n.id=:notaId AND n.curso.docente.id=:docenteId AND EXISTS (
+              SELECT i.id FROM Inscripcion i WHERE i.estudiante.id=n.estudiante.id
+                AND i.curso.id=n.curso.id AND i.cicloAnio=n.cicloAnio AND i.activo=true
+                AND UPPER(i.estado)<>'ANULADA')
+            """)
+    boolean existsGestionablePorDocente(@Param("notaId") Long notaId, @Param("docenteId") Long docenteId);
+
     Page<Nota> findByEstudiante_Id(Long estudianteId, Pageable pageable);
 
     default Page<Nota> findByEstudianteId(Long estudianteId, Pageable pageable) {
@@ -29,6 +38,17 @@ public interface NotaRepository extends JpaRepository<Nota, Long> {
     }
 
     Page<Nota> findByCurso_Id(Long cursoId, Pageable pageable);
+    Page<Nota> findByCurso_IdAndCicloAnio(Long cursoId, Integer cicloAnio, Pageable pageable);
+
+    @Query("""
+            SELECT n FROM Nota n WHERE n.curso.id=:cursoId
+              AND (:cicloAnio IS NULL OR n.cicloAnio=:cicloAnio) AND EXISTS (
+                SELECT i.id FROM Inscripcion i WHERE i.estudiante.id=n.estudiante.id
+                  AND i.curso.id=n.curso.id AND i.cicloAnio=n.cicloAnio AND i.activo=true
+                  AND UPPER(i.estado)<>'ANULADA')
+            """)
+    Page<Nota> findValidasByCurso(@Param("cursoId") Long cursoId,
+            @Param("cicloAnio") Integer cicloAnio, Pageable pageable);
 
     default Page<Nota> findByCursoId(Long cursoId, Pageable pageable) {
         return findByCurso_Id(cursoId, pageable);

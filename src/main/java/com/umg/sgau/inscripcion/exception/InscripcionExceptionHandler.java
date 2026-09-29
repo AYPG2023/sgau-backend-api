@@ -52,6 +52,11 @@ public class InscripcionExceptionHandler {
         return crearRespuesta(HttpStatus.CONFLICT, ex.getMessage());
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> manejarRelacionInvalida(IllegalArgumentException ex) {
+        return crearRespuesta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
     private ResponseEntity<Map<String, Object>> crearRespuesta(
             HttpStatus estado, String mensaje) {
         Map<String, Object> respuesta = new LinkedHashMap<>();

@@ -37,4 +37,13 @@ public class DocenteCreateRequestDTO {
 
     @Size(max = 100, message = "La especialidad no puede superar los 100 caracteres")
     private String especialidad;
+
+    private Boolean accesoApp;
+    private Long usuarioId;
+
+    @Size(max = 50, message = "El username no puede superar los 50 caracteres")
+    private String username;
+
+    @Size(min = 8, max = 100, message = "La contrasena debe tener entre 8 y 100 caracteres")
+    private String password;
 }

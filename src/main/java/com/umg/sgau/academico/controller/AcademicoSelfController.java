@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/academico")
@@ -24,18 +25,21 @@ public class AcademicoSelfController {
 
     @GetMapping("/docente/me/cursos")
     @PreAuthorize("hasAuthority('CURSOS_LEER')")
-    public List<AcademicoDTOs.Curso> cursosDocente(Authentication auth) { return service.cursosDocente(auth); }
+    public List<AcademicoDTOs.Curso> cursosDocente(Authentication auth,
+            @RequestParam(required = false) Integer cicloAnio) { return service.cursosDocente(auth, cicloAnio); }
 
     @GetMapping("/docente/me/cursos/{cursoId}/estudiantes")
     @PreAuthorize("hasAuthority('INSCRIPCIONES_LEER')")
-    public Page<AcademicoDTOs.Inscripcion> alumnos(Authentication auth, @PathVariable Long cursoId, Pageable pageable) {
-        return service.alumnosCurso(auth, cursoId, pageable);
+    public Page<AcademicoDTOs.Inscripcion> alumnos(Authentication auth, @PathVariable Long cursoId,
+            @RequestParam(required = false) Integer cicloAnio, Pageable pageable) {
+        return service.alumnosCurso(auth, cursoId, cicloAnio, pageable);
     }
 
     @GetMapping("/docente/me/cursos/{cursoId}/notas")
     @PreAuthorize("hasAuthority('NOTAS_LEER')")
-    public Page<AcademicoDTOs.Nota> notasCurso(Authentication auth, @PathVariable Long cursoId, Pageable pageable) {
-        return service.notasCurso(auth, cursoId, pageable);
+    public Page<AcademicoDTOs.Nota> notasCurso(Authentication auth, @PathVariable Long cursoId,
+            @RequestParam(required = false) Integer cicloAnio, Pageable pageable) {
+        return service.notasCurso(auth, cursoId, cicloAnio, pageable);
     }
 
     @GetMapping("/estudiante/me")
@@ -49,6 +53,22 @@ public class AcademicoSelfController {
     @GetMapping("/estudiante/me/cursos")
     @PreAuthorize("hasAuthority('CURSOS_LEER')")
     public List<AcademicoDTOs.Curso> cursos(Authentication auth) { return service.cursosEstudiante(auth); }
+
+    @GetMapping("/estudiante/me/cursos-inscritos")
+    @PreAuthorize("hasAuthority('CURSOS_LEER')")
+    public List<AcademicoDTOs.Curso> cursosInscritos(Authentication auth) { return service.cursosEstudiante(auth); }
+
+    @GetMapping("/estudiante/me/carrera")
+    @PreAuthorize("hasAuthority('ESTUDIANTES_LEER')")
+    public AcademicoDTOs.Carrera carrera(Authentication auth) { return service.carreraEstudiante(auth); }
+
+    @GetMapping("/estudiante/me/plan-carrera")
+    @PreAuthorize("hasAuthority('CURSOS_LEER')")
+    public AcademicoDTOs.PlanCarrera planCarrera(Authentication auth) { return service.planCarrera(auth); }
+
+    @GetMapping("/estudiante/me/docentes")
+    @PreAuthorize("hasAuthority('CURSOS_LEER')")
+    public List<AcademicoDTOs.DocenteCurso> docentes(Authentication auth) { return service.docentesEstudiante(auth); }
 
     @GetMapping("/estudiante/me/notas")
     @PreAuthorize("hasAuthority('NOTAS_LEER')")

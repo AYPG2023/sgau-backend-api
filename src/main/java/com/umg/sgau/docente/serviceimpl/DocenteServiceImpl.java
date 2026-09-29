@@ -1,126 +1,55 @@
 package com.umg.sgau.docente.serviceimpl;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-
+import com.umg.sgau.academico.service.AcademicAccountLinkService;
 import com.umg.sgau.docente.entity.Docente;
 import com.umg.sgau.docente.exception.DocenteDuplicadoException;
 import com.umg.sgau.docente.exception.DocenteNoEncontradoException;
 import com.umg.sgau.docente.repository.DocenteRepository;
 import com.umg.sgau.docente.service.DocenteService;
+import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-//es un servicio
-@Service
+@Service @Transactional
 public class DocenteServiceImpl implements DocenteService {
-	
-	private final DocenteRepository docenteRepository;
-	
-	//inyeccion de dependencia por constructor
-	public DocenteServiceImpl(DocenteRepository docenteRepository) {
-		this.docenteRepository = docenteRepository;
-	}
-
-	@Override
-	public Docente crear(Docente docente) {
-		
-		// regla de negocio: no permitir codigo de docente duplicado
-		if (docenteRepository.existsByCodigoDocente(docente.getCodigoDocente())) {
-			throw new DocenteDuplicadoException(
-					"Ya existe un docente con el código: " + docente.getCodigoDocente()
-			);
-		}
-		
-		// regla de negocio: no permitir email duplicado
-		if (docenteRepository.existsByEmail(docente.getEmail())) {
-			throw new DocenteDuplicadoException(
-					"Ya existe un docente con el email: " + docente.getEmail()
-			);
-		}
-		
-		docente.setActivo(true);
-		return docenteRepository.save(docente);
-	}
-
-	@Override
-	public Docente obtenerPorId(Long id) {
-		return docenteRepository.findById(id)
-				.orElseThrow(() -> new DocenteNoEncontradoException(id));
-	}
-
-	@Override
-	public List<Docente> obtenerTodos() {
-		return docenteRepository.findAll();
-	}
-
-	@Override
-	public Page<Docente> listar(String busqueda, Boolean activo, Pageable pageable) {
-		return docenteRepository.buscarConFiltros(normalizarBusqueda(busqueda), activo, pageable);
-	}
-
-	@Override
-	public List<Docente> obtenerActivos() {
-		return docenteRepository.findAll()
-				.stream()
-				.filter(docente -> Boolean.TRUE.equals(docente.getActivo()))
-				.collect(Collectors.toList());
-	}
-
-	@Override
-	public List<String> obtenerCorreosActivos() {
-		return docenteRepository.findAll()
-				.stream()
-				.filter(docente -> Boolean.TRUE.equals(docente.getActivo()))
-				.map(Docente::getEmail)
-				.collect(Collectors.toList());
-	}
-	
-	@Override
-	public Docente actualizar(Long id, Docente docente) {
-		
-		Docente docenteActual = obtenerPorId(id);
-
-		if (docenteRepository.existsByCodigoDocenteAndIdNot(docente.getCodigoDocente(), id)) {
-			throw new DocenteDuplicadoException(
-					"Ya existe un docente con el codigo: " + docente.getCodigoDocente()
-			);
-		}
-
-		if (docenteRepository.existsByEmailAndIdNot(docente.getEmail(), id)) {
-			throw new DocenteDuplicadoException(
-					"Ya existe un docente con el email: " + docente.getEmail()
-			);
-		}
-			
-		docenteActual.setCodigoDocente(docente.getCodigoDocente());
-		docenteActual.setEmail(docente.getEmail());
-		docenteActual.setNombre(docente.getNombre());
-		docenteActual.setApellido(docente.getApellido());
-		docenteActual.setTelefono(docente.getTelefono());
-		docenteActual.setEspecialidad(docente.getEspecialidad());
-
-		return docenteRepository.save(docenteActual);
-	}
-
-	@Override
-	public Docente cambiarEstado(Long id, Boolean activo) {
-		Docente docente = obtenerPorId(id);
-		docente.setActivo(activo);
-		return docenteRepository.save(docente);
-	}
-		
-	@Override
-	public void eliminar(Long id) {
-		cambiarEstado(id, false);
-	}
-
-	private String normalizarBusqueda(String busqueda) {
-		if (busqueda == null || busqueda.isBlank()) {
-			return "";
-		}
-		return busqueda.trim();
-	}
+    private final DocenteRepository docentes;
+    private final AcademicAccountLinkService accountLinks;
+    public DocenteServiceImpl(DocenteRepository docentes, AcademicAccountLinkService accountLinks) {
+        this.docentes = docentes; this.accountLinks = accountLinks;
+    }
+    @Override public Docente crear(Docente d) { return crearOVincular(d, null, false, null, null); }
+    @Override public Docente crearOVincular(Docente d, Long usuarioId, Boolean acceso, String username, String password) {
+        Docente codigo=docentes.findByCodigoDocente(d.getCodigoDocente()).orElse(null);
+        Docente email=docentes.findByEmailIgnoreCase(d.getEmail()).orElse(null);
+        if (codigo != null || email != null) {
+            if (codigo == null || email == null || !codigo.getId().equals(email.getId()))
+                throw new DocenteDuplicadoException("El codigo o email pertenece a otro docente");
+            if (codigo.getUsuario() != null) {
+                if (usuarioId == null || codigo.getUsuario().getId().equals(usuarioId)) return codigo;
+                throw new DocenteDuplicadoException("El docente ya esta vinculado a otro usuario");
+            }
+            codigo.setUsuario(accountLinks.resolver(usuarioId, acceso, username, password,
+                    d.getEmail(), d.getNombre(), d.getApellido(), "DOCENTE"));
+            return docentes.save(codigo);
+        }
+        d.setUsuario(accountLinks.resolver(usuarioId, acceso, username, password,
+                d.getEmail(), d.getNombre(), d.getApellido(), "DOCENTE"));
+        d.setActivo(true); return docentes.save(d);
+    }
+    @Override @Transactional(readOnly=true) public Docente obtenerPorId(Long id) { return docentes.findById(id).orElseThrow(() -> new DocenteNoEncontradoException(id)); }
+    @Override @Transactional(readOnly=true) public List<Docente> obtenerTodos() { return docentes.findAll(); }
+    @Override @Transactional(readOnly=true) public Page<Docente> listar(String q, Boolean activo, Pageable p) { return docentes.buscarConFiltros(q==null||q.isBlank()?"":q.trim(), activo, p); }
+    @Override @Transactional(readOnly=true) public List<Docente> obtenerActivos() { return docentes.findSeleccionables(); }
+    @Override @Transactional(readOnly=true) public List<String> obtenerCorreosActivos() { return docentes.findSeleccionables().stream().map(Docente::getEmail).toList(); }
+    @Override public Docente actualizar(Long id, Docente d) {
+        Docente a=obtenerPorId(id);
+        if(docentes.existsByCodigoDocenteAndIdNot(d.getCodigoDocente(),id)) throw new DocenteDuplicadoException("Codigo duplicado");
+        if(docentes.existsByEmailAndIdNot(d.getEmail(),id)) throw new DocenteDuplicadoException("Email duplicado");
+        a.setCodigoDocente(d.getCodigoDocente()); a.setNombre(d.getNombre()); a.setApellido(d.getApellido());
+        a.setEmail(d.getEmail()); a.setTelefono(d.getTelefono()); a.setEspecialidad(d.getEspecialidad()); return docentes.save(a);
+    }
+    @Override public Docente cambiarEstado(Long id, Boolean activo) { Docente d=obtenerPorId(id); d.setActivo(activo); return docentes.save(d); }
+    @Override public void eliminar(Long id) { cambiarEstado(id,false); }
 }

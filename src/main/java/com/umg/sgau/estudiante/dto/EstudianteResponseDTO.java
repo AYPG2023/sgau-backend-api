@@ -31,6 +31,8 @@ public class EstudianteResponseDTO {
     private String direccion;
 
     private Boolean activo;
+    private Long usuarioId;
+    private Boolean accesoApp;
 
     private LocalDateTime fechaCreacion;
 

@@ -39,9 +39,8 @@ public class EstudianteController {
     ) {
 
         Estudiante estudianteCreado =
-                estudianteService.crear(
-                        EstudianteMapper.toEntity(request)
-                );
+                estudianteService.crearOVincular(EstudianteMapper.toEntity(request), request.getUsuarioId(),
+                        request.getAccesoApp(), request.getUsername(), request.getPassword());
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)

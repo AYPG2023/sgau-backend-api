@@ -48,13 +48,13 @@ public class AccessScopeService {
         Optional<Long> estudianteId = idEstudiante(authentication);
         if (estudianteId.isPresent()) return notaRepository.existsByIdAndEstudiante_Id(notaId, estudianteId.get());
         Optional<Long> docenteId = idDocente(authentication);
-        return docenteId.isPresent() && notaRepository.existsByIdAndCurso_Docente_Id(notaId, docenteId.get());
+        return docenteId.isPresent() && notaRepository.existsGestionablePorDocente(notaId, docenteId.get());
     }
 
     public boolean puedeGestionarNota(Authentication authentication, Long notaId) {
         if (esAdmin(authentication)) return true;
         Optional<Long> docenteId = idDocente(authentication);
-        return docenteId.isPresent() && notaRepository.existsByIdAndCurso_Docente_Id(notaId, docenteId.get());
+        return docenteId.isPresent() && notaRepository.existsGestionablePorDocente(notaId, docenteId.get());
     }
 
     public boolean puedeGestionarCurso(Authentication authentication, Long cursoId) {
@@ -81,8 +81,9 @@ public class AccessScopeService {
     }
 
     public boolean puedeLeerNotasEstudianteCurso(Authentication authentication, Long estudianteId, Long cursoId) {
-        return esEstudiantePropietario(authentication, estudianteId)
-                || puedeGestionarCurso(authentication, cursoId);
+        if (esEstudiantePropietario(authentication, estudianteId)) return true;
+        return puedeGestionarCurso(authentication, cursoId)
+                && inscripcionRepository.existsByEstudiante_IdAndCurso_IdAndActivoTrue(estudianteId, cursoId);
     }
 
     public boolean puedeLeerColegiatura(Authentication authentication, Long colegiaturaId) {
@@ -97,17 +98,18 @@ public class AccessScopeService {
     }
 
     public Optional<Long> idEstudiante(Authentication authentication) {
-        return correo(authentication).flatMap(estudianteRepository::findByCorreoIgnoreCase).map(e -> e.getId());
+        return usuario(authentication).flatMap(u -> estudianteRepository.findByUsuarioId(u.getId())
+                .or(() -> estudianteRepository.findByCorreoIgnoreCase(u.getEmail()))).map(e -> e.getId());
     }
 
     public Optional<Long> idDocente(Authentication authentication) {
-        return correo(authentication).flatMap(docenteRepository::findByEmailIgnoreCase).map(d -> d.getId());
+        return usuario(authentication).flatMap(u -> docenteRepository.findByUsuarioId(u.getId())
+                .or(() -> docenteRepository.findByEmailIgnoreCase(u.getEmail()))).map(d -> d.getId());
     }
 
-    private Optional<String> correo(Authentication authentication) {
+    private Optional<com.umg.sgau.usuario.entity.Usuario> usuario(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) return Optional.empty();
-        return usuarioRepository.findWithRolesAndPermisosByUsernameIgnoreCase(authentication.getName())
-                .map(u -> u.getEmail());
+        return usuarioRepository.findWithRolesAndPermisosByUsernameIgnoreCase(authentication.getName());
     }
 
     private boolean tieneRol(Authentication authentication, String rol) {

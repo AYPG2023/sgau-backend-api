@@ -88,6 +88,8 @@ public class NotaServiceImpl implements NotaService {
         existente.setCalificacion(nota.getCalificacion());
         existente.setObservaciones(nota.getObservaciones());
 
+        validarReferenciasActivas(existente);
+        validarInscripcionActiva(existente);
         validarDuplicadoActivo(existente, id);
 
         return notaRepository.save(existente);
@@ -210,6 +212,9 @@ public class NotaServiceImpl implements NotaService {
             throw new CursoInactivoParaNotaException(cursoId);
         }
         nota.setCurso(curso);
+        if (nota.getCicloAnio() == null || !nota.getCicloAnio().equals(curso.getCicloAnio())) {
+            throw new NotaInvalidaException("El ciclo de la nota debe coincidir con el ciclo academico del curso.");
+        }
     }
 
     private Estudiante validarEstudianteExistente(Long estudianteId) {

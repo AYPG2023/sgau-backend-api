@@ -22,6 +22,8 @@ public class DocenteResponseDTO {
     private String telefono;
     private String especialidad;
     private Boolean activo;
+    private Long usuarioId;
+    private Boolean accesoApp;
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
 }

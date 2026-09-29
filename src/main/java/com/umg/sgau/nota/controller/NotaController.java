@@ -127,7 +127,7 @@ public class NotaController {
     }
 
     @GetMapping("/curso/{cursoId}")
-    @PreAuthorize("@accessScope.puedeGestionarCurso(authentication, #cursoId)")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<Page<NotaResponseDTO>> notasDelCurso(
             @PathVariable Long cursoId,
             Pageable pageable) {

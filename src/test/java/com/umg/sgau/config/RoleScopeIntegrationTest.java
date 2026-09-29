@@ -108,7 +108,8 @@ class RoleScopeIntegrationTest {
                 """.formatted(ajeno.getId(), ajenoDocente.getId())), docenteToken, 403);
         autorizado(get("/api/auditoria"), docenteToken, 403);
         autorizado(get("/api/cursos/docente/" + docente.getId()), docenteToken, 200);
-        autorizado(get("/api/notas/curso/" + propioDocente.getId()), docenteToken, 200);
+        autorizado(get("/api/notas/curso/" + propioDocente.getId()), docenteToken, 403);
+        autorizado(get("/api/academico/docente/me/cursos/" + propioDocente.getId() + "/notas"), docenteToken, 200);
         autorizado(get("/api/notas/" + notaPropia.getId()), docenteToken, 200);
         autorizado(get("/api/notas/curso/" + ajenoDocente.getId()), docenteToken, 403);
         autorizado(get("/api/notas/" + notaAjena.getId()), docenteToken, 403);

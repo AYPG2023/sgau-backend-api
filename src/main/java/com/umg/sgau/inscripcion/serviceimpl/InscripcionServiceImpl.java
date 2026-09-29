@@ -277,6 +277,9 @@ public class InscripcionServiceImpl implements InscripcionService {
         if (curso != null && curso.getCarrera() != null && !curso.getCarrera().getId().equals(carreraId)) {
             throw new CursoNoPerteneceCarreraException(getCursoId(inscripcion), carreraId);
         }
+        if (curso != null && !curso.getCicloAnio().equals(inscripcion.getCicloAnio())) {
+            throw new IllegalArgumentException("El ciclo de la inscripcion debe coincidir con el ciclo academico del curso.");
+        }
     }
 
     private void validarDuplicadoActivo(Inscripcion inscripcion, Long idExcluir) {

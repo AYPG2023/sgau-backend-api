@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 public interface EstudianteService {
 
     Estudiante crear(Estudiante estudiante);
+    Estudiante crearOVincular(Estudiante estudiante, Long usuarioId, Boolean accesoApp, String username, String password);
 
     Estudiante obtenerPorId(Long id);
 

@@ -172,6 +172,8 @@ class NotaServiceImplTest {
         cambios.setCalificacion(new BigDecimal("95.00"));
         cambios.setObservaciones("Mejorada");
         when(notaRepository.findById(1L)).thenReturn(Optional.of(existente));
+        prepararReferenciasActivas(existente);
+        when(inscripcionService.existeInscripcionActiva(1L, 100L, 2026)).thenReturn(true);
         when(notaRepository.save(any(Nota.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         Nota actualizada = notaService.actualizar(1L, cambios);
@@ -189,6 +191,8 @@ class NotaServiceImplTest {
         Nota existente = notaExistente(1L, true, "PARCIAL", "80.00");
         Nota cambios = notaNueva("FINAL");
         when(notaRepository.findById(1L)).thenReturn(Optional.of(existente));
+        prepararReferenciasActivas(existente);
+        when(inscripcionService.existeInscripcionActiva(1L, 100L, 2026)).thenReturn(true);
         when(notaRepository.existsByEstudianteIdAndCursoIdAndCicloAnioAndTipoEvaluacionAndActivoTrueAndIdNot(
                 1L, 100L, 2026, "FINAL", 1L)).thenReturn(true);
 
@@ -196,6 +200,32 @@ class NotaServiceImplTest {
                 .isInstanceOf(NotaDuplicadaException.class);
 
         verify(notaRepository, never()).save(any(Nota.class));
+    }
+
+    @Test
+    void actualizarRechazaNotaSiLaInscripcionFueAnulada() {
+        Nota existente = notaExistente(1L, true, "PARCIAL", "80.00");
+        Nota cambios = notaNueva("PARCIAL");
+        when(notaRepository.findById(1L)).thenReturn(Optional.of(existente));
+        prepararReferenciasActivas(existente);
+        when(inscripcionService.existeInscripcionActiva(1L, 100L, 2026)).thenReturn(false);
+
+        assertThatThrownBy(() -> notaService.actualizar(1L, cambios))
+                .isInstanceOf(InscripcionActivaNoEncontradaException.class);
+        verify(notaRepository, never()).save(any(Nota.class));
+    }
+
+    @Test
+    void crearRechazaCicloDistintoAlCursoAunqueExistaOtraInscripcion() {
+        Nota nota = notaNueva("PARCIAL");
+        nota.setCicloAnio(2027);
+        when(estudianteService.obtenerPorId(1L)).thenReturn(estudiante(1L, true));
+        when(cursoService.obtenerPorId(100L)).thenReturn(curso(100L, true));
+
+        assertThatThrownBy(() -> notaService.crear(nota))
+                .isInstanceOf(com.umg.sgau.nota.exception.NotaInvalidaException.class)
+                .hasMessageContaining("ciclo");
+        verify(inscripcionService, never()).existeInscripcionActiva(any(), any(), any());
     }
 
     @Test

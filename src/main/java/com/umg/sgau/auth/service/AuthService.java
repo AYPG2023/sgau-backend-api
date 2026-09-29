@@ -84,6 +84,8 @@ public class AuthService {
                     .tokenType(TOKEN_TYPE)
                     .expiresIn(jwtService.getExpirationSeconds())
                     .usuarioId(usuario.getId())
+                    .docenteId(docenteRepository.findByUsuarioId(usuario.getId()).map(d -> d.getId()).orElse(null))
+                    .estudianteId(estudianteRepository.findByUsuarioId(usuario.getId()).map(e -> e.getId()).orElse(null))
                     .username(usuario.getUsername())
                     .nombre(usuario.getNombre())
                     .apellido(usuario.getApellido())
@@ -113,14 +115,16 @@ public class AuthService {
             throw new IllegalArgumentException("Ya existe un usuario con ese email");
         }
         String correoActual = usuario.getEmail();
-        estudianteRepository.findByCorreoIgnoreCase(correoActual).ifPresent(estudiante -> {
+        estudianteRepository.findByUsuarioId(usuario.getId())
+                .or(() -> estudianteRepository.findByCorreoIgnoreCase(correoActual)).ifPresent(estudiante -> {
             if (estudianteRepository.existsByCorreoIgnoreCaseAndIdNot(email, estudiante.getId())) {
                 throw new IllegalArgumentException("Ya existe un usuario con ese email");
             }
             estudiante.setCorreo(email);
             estudianteRepository.save(estudiante);
         });
-        docenteRepository.findByEmailIgnoreCase(correoActual).ifPresent(docente -> {
+        docenteRepository.findByUsuarioId(usuario.getId())
+                .or(() -> docenteRepository.findByEmailIgnoreCase(correoActual)).ifPresent(docente -> {
             if (docenteRepository.existsByEmailIgnoreCaseAndIdNot(email, docente.getId())) {
                 throw new IllegalArgumentException("Ya existe un usuario con ese email");
             }

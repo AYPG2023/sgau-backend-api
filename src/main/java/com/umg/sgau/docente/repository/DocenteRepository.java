@@ -16,6 +16,8 @@ public interface DocenteRepository  extends JpaRepository <Docente, Long> {
 	
 	Optional<Docente> findByEmail(String email);
     Optional<Docente> findByEmailIgnoreCase(String email);
+    Optional<Docente> findByUsuarioId(Long usuarioId);
+    boolean existsByUsuarioId(Long usuarioId);
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
 
     Optional<Docente> findByCodigoDocente(String codigoDocente);
@@ -43,5 +45,12 @@ public interface DocenteRepository  extends JpaRepository <Docente, Long> {
             @Param("busqueda") String busqueda,
             @Param("activo") Boolean activo,
             Pageable pageable);
+
+    @Query("""
+            SELECT d FROM Docente d JOIN d.usuario u JOIN u.roles r
+            WHERE d.activo = true AND u.activo = true AND r.activo = true
+              AND UPPER(r.codigo) = 'DOCENTE'
+            """)
+    java.util.List<Docente> findSeleccionables();
 	
 }
