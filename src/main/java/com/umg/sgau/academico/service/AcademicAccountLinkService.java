@@ -34,9 +34,9 @@ public class AcademicAccountLinkService {
             String email, String nombre, String apellido, String codigoRol) {
         if (usuarioId == null && !Boolean.TRUE.equals(accesoApp)) return null;
 
-        Usuario usuario = usuarioId == null
-                ? usuarios.findByEmailIgnoreCase(email).map(u -> cargar(u.getId())).orElse(null)
-                : cargar(usuarioId);
+        // Crear y vincular son operaciones distintas: una alta nueva nunca adopta
+        // silenciosamente una cuenta que coincida por correo.
+        Usuario usuario = usuarioId == null ? null : cargar(usuarioId);
 
         if (usuario == null) {
             exigirTexto(username, "El username es obligatorio para crear el acceso a la app");

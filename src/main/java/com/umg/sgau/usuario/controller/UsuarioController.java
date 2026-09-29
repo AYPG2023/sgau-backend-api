@@ -5,10 +5,14 @@ import com.umg.sgau.rol.mapper.RolMapper;
 import com.umg.sgau.usuario.dto.UsuarioRequestDTO;
 import com.umg.sgau.usuario.dto.UsuarioResponseDTO;
 import com.umg.sgau.usuario.dto.UsuarioRolesRequestDTO;
+import com.umg.sgau.usuario.dto.AltaUsuarioRequestDTO;
+import com.umg.sgau.usuario.dto.AltaUsuarioResponseDTO;
 import com.umg.sgau.usuario.entity.Usuario;
 import com.umg.sgau.usuario.exception.UsuarioNoEncontradoException;
 import com.umg.sgau.usuario.mapper.UsuarioMapper;
 import com.umg.sgau.usuario.service.UsuarioService;
+import com.umg.sgau.usuario.service.AltaUsuarioService;
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,10 +27,20 @@ import java.util.stream.Collectors;
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
+    private final AltaUsuarioService altaUsuarioService;
 
     // Inyección por constructor 
-    public UsuarioController(UsuarioService usuarioService) {
+    public UsuarioController(UsuarioService usuarioService, AltaUsuarioService altaUsuarioService) {
         this.usuarioService = usuarioService;
+        this.altaUsuarioService = altaUsuarioService;
+    }
+
+    @PostMapping("/alta-conjunta")
+    @Operation(summary = "Alta administrativa conjunta y transaccional",
+            description = "Crea una cuenta nueva, sus roles y los perfiles DOCENTE y/o ESTUDIANTE en una sola transaccion. No reutiliza cuentas existentes por correo. Ambos perfiles pueden crearse para una misma cuenta.")
+    public ResponseEntity<AltaUsuarioResponseDTO> altaConjunta(
+            @Valid @RequestBody AltaUsuarioRequestDTO request) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(altaUsuarioService.crear(request));
     }
 
     @PostMapping

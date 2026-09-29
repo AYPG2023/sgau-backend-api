@@ -10,9 +10,23 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 @RestControllerAdvice(assignableTypes = UsuarioController.class)
 public class UsuarioExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> manejarValidacion(MethodArgumentNotValidException exception) {
+        Map<String, String> errores = new LinkedHashMap<>();
+        exception.getBindingResult().getFieldErrors()
+                .forEach(error -> errores.putIfAbsent(error.getField(), error.getDefaultMessage()));
+        return crearRespuestaValidacion(errores);
+    }
+
+    @ExceptionHandler(AltaUsuarioValidationException.class)
+    public ResponseEntity<Map<String, Object>> manejarAltaInvalida(AltaUsuarioValidationException exception) {
+        return crearRespuestaValidacion(exception.getErrores());
+    }
 
     @ExceptionHandler({UsuarioNoEncontradoException.class, RolNoEncontradoException.class})
     public ResponseEntity<Map<String, Object>> manejarNoEncontrado(RuntimeException exception) {
@@ -36,5 +50,15 @@ public class UsuarioExceptionHandler {
         respuesta.put("error", estado.getReasonPhrase());
         respuesta.put("message", mensaje);
         return ResponseEntity.status(estado).body(respuesta);
+    }
+
+    private ResponseEntity<Map<String, Object>> crearRespuestaValidacion(Map<String, String> errores) {
+        Map<String, Object> respuesta = new LinkedHashMap<>();
+        respuesta.put("timestamp", LocalDateTime.now());
+        respuesta.put("status", HttpStatus.BAD_REQUEST.value());
+        respuesta.put("error", HttpStatus.BAD_REQUEST.getReasonPhrase());
+        respuesta.put("message", "La solicitud contiene datos invalidos");
+        respuesta.put("fieldErrors", errores);
+        return ResponseEntity.badRequest().body(respuesta);
     }
 }
