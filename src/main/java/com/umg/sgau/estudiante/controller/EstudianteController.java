@@ -1,6 +1,7 @@
 package com.umg.sgau.estudiante.controller;
 
 import com.umg.sgau.estudiante.dto.EstudianteCreateRequestDTO;
+import com.umg.sgau.estudiante.dto.EstudianteResponseDTO;
 import com.umg.sgau.estudiante.dto.EstudianteStatusRequestDTO;
 import com.umg.sgau.estudiante.dto.EstudianteUpdateRequestDTO;
 import com.umg.sgau.estudiante.entity.Estudiante;
@@ -17,6 +18,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/api/estudiantes")
@@ -34,7 +36,8 @@ public class EstudianteController {
     }
 
     @PostMapping
-    public ResponseEntity<?> crear(
+    @Operation(summary = "Crear o vincular un estudiante", description = "Recibe nombre, apellido y correo una sola vez. Si se crea o vincula una cuenta, Usuario es la fuente de verdad de esa identidad.")
+    public ResponseEntity<EstudianteResponseDTO> crear(
             @Valid @RequestBody EstudianteCreateRequestDTO request
     ) {
 
@@ -44,11 +47,7 @@ public class EstudianteController {
 
         return ResponseEntity
                 .status(HttpStatus.CREATED)
-                .body(
-                        EstudianteMapper.toResponseDTO(
-                                estudianteCreado
-                        )
-                );
+                .body(EstudianteMapper.toResponseDTO(estudianteCreado));
     }
 
     @GetMapping("/{id}")
@@ -104,6 +103,7 @@ public class EstudianteController {
     }
 
     @PutMapping("/{id}")
+    @Operation(summary = "Actualizar datos académicos de estudiante", description = "El cuerpo solo acepta codigoEstudiantil, numeroIdentificacion, fechaNacimiento, telefono y direccion. Nombre, apellido y correo se administran en Usuario.")
     public ResponseEntity<?> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody EstudianteUpdateRequestDTO request

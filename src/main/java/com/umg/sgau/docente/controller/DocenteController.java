@@ -27,6 +27,7 @@ import com.umg.sgau.docente.mapper.DocenteMapper;
 import com.umg.sgau.docente.service.DocenteService;
 
 import jakarta.validation.Valid;
+import io.swagger.v3.oas.annotations.Operation;
 
 @RestController
 @RequestMapping("/api/docentes")
@@ -40,6 +41,7 @@ public class DocenteController {
 
     // CREAR DOCENTE
     @PostMapping
+    @Operation(summary = "Crear o vincular un docente", description = "Recibe nombre, apellido y email una sola vez. Si se crea o vincula una cuenta, Usuario es la fuente de verdad de esa identidad.")
     public ResponseEntity<DocenteResponseDTO> crear(
             @Valid @RequestBody DocenteCreateRequestDTO request) {
 
@@ -99,6 +101,7 @@ public class DocenteController {
 
     // ACTUALIZAR DOCENTE
     @PutMapping("/{id}")
+    @Operation(summary = "Actualizar datos académicos de docente", description = "El cuerpo solo acepta codigoDocente, telefono y especialidad. Nombre, apellido y email se administran en Usuario.")
     public ResponseEntity<?> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody DocenteUpdateRequestDTO request) {

@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -11,6 +12,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
+@Schema(description = "Crea un perfil docente. nombre, apellido y email son la identidad única; si se crea o vincula una cuenta, esa identidad se guarda en Usuario. Si accesoApp es false, el perfil conserva los datos históricos como respaldo.")
 public class DocenteCreateRequestDTO {
 
     @NotBlank(message = "El codigo del docente es obligatorio")

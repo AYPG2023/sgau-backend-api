@@ -8,10 +8,10 @@ public final class AcademicoDTOs {
     private AcademicoDTOs() {}
 
     public record DocentePerfil(Long id, String codigo, String nombre, String apellido,
-            String email, String telefono, String especialidad, Boolean activo) {}
+            String email, String telefono, String especialidad, Boolean activo, String identidadFuente) {}
 
     public record EstudiantePerfil(Long id, String codigo, String nombres, String apellidos,
-            String correo, String telefono, String direccion, Boolean activo) {}
+            String correo, String telefono, String direccion, Boolean activo, String identidadFuente) {}
 
     public record Curso(Long id, String codigo, String nombre, String descripcion,
             Integer creditos, Integer horasSemanales, Integer cicloAnio, Boolean activo,

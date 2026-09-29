@@ -117,8 +117,10 @@ class AuthSelfServiceIntegrationTest {
                 .andExpect(jsonPath("$.activo").value(true))
                 .andExpect(jsonPath("$.requiereNuevoLogin").value(true));
 
-        org.assertj.core.api.Assertions.assertThat(
-                estudianteRepository.findByCorreoIgnoreCase("nuevo-self-service@sgau.test")).isPresent();
+        Long usuarioId = usuarioRepository.findByUsername("nuevo_self_service").orElseThrow().getId();
+        Estudiante estudianteVinculado = estudianteRepository.findByUsuarioId(usuarioId).orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(estudianteVinculado.getCorreo())
+                .isEqualTo("nuevo-self-service@sgau.test");
 
         mockMvc.perform(get("/api/auth/me").header("Authorization", "Bearer " + token))
                 .andExpect(status().isUnauthorized());

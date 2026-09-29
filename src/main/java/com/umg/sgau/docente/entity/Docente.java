@@ -40,13 +40,14 @@ public class Docente {
     @Column(name = "codigo_docente", nullable = false, unique = true, length = 20)
     private String codigoDocente;
 
-    @Column(nullable = false, length = 60)
+    /** Historical identity snapshot retained for unlinked profiles during migration. */
+    @Column(nullable = true, length = 60)
     private String nombre;
 
-    @Column(nullable = false, length = 60)
+    @Column(nullable = true, length = 60)
     private String apellido;
 
-    @Column(nullable = false, unique = true, length = 100)
+    @Column(nullable = true, unique = true, length = 100)
     private String email;
 
     @Column(length = 20)
@@ -58,10 +59,14 @@ public class Docente {
     @Column(nullable = false)
     private Boolean activo;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id", unique = true)
     @JsonIgnore
     private Usuario usuario;
+
+    public String getNombre() { return usuario == null ? nombre : usuario.getNombre(); }
+    public String getApellido() { return usuario == null ? apellido : usuario.getApellido(); }
+    public String getEmail() { return usuario == null ? email : usuario.getEmail(); }
 
     @OneToMany(mappedBy = "docente", fetch = FetchType.LAZY)
     @JsonIgnore

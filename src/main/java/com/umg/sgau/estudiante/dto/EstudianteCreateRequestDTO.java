@@ -4,6 +4,7 @@ package com.umg.sgau.estudiante.dto;
 import jakarta.validation.constraints.*;
 
 import lombok.*;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.LocalDate;
 
@@ -12,6 +13,7 @@ import java.time.LocalDate;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Schema(description = "Crea un perfil estudiante. nombres, apellidos y correo son la identidad única; si se crea o vincula una cuenta, esa identidad se guarda en Usuario. Si accesoApp es false, el perfil conserva los datos históricos como respaldo.")
 public class EstudianteCreateRequestDTO {
 
     @NotBlank(message = "El código estudiantil es obligatorio.")

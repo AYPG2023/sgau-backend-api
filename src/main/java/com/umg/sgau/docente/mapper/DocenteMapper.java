@@ -29,9 +29,6 @@ public final class DocenteMapper {
 
     public static void actualizarEntidad(DocenteUpdateRequestDTO dto, Docente docente) {
         docente.setCodigoDocente(dto.getCodigoDocente());
-        docente.setNombre(dto.getNombre());
-        docente.setApellido(dto.getApellido());
-        docente.setEmail(dto.getEmail());
         docente.setTelefono(dto.getTelefono());
         docente.setEspecialidad(dto.getEspecialidad());
     }
@@ -48,6 +45,7 @@ public final class DocenteMapper {
                 .activo(docente.getActivo())
                 .usuarioId(docente.getUsuario() == null ? null : docente.getUsuario().getId())
                 .accesoApp(docente.getUsuario() != null && Boolean.TRUE.equals(docente.getUsuario().getActivo()))
+                .identidadFuente(docente.getUsuario() == null ? "PERFIL_HISTORICO" : "USUARIO")
                 .fechaCreacion(docente.getFechaCreacion())
                 .fechaActualizacion(docente.getFechaActualizacion())
                 .build();

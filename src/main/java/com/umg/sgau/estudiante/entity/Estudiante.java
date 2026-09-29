@@ -39,16 +39,17 @@ public class Estudiante {
     @Column(name = "numero_identificacion", nullable = false, length = 20)
     private String numeroIdentificacion;
 
-    @Column(nullable = false, length = 100)
+    /** Historical identity snapshot retained for unlinked profiles during migration. */
+    @Column(nullable = true, length = 100)
     private String nombres;
 
-    @Column(nullable = false, length = 100)
+    @Column(nullable = true, length = 100)
     private String apellidos;
 
     @Column(name = "fecha_nacimiento", nullable = false)
     private LocalDate fechaNacimiento;
 
-    @Column(nullable = false, length = 150)
+    @Column(nullable = true, length = 150)
     private String correo;
 
     @Column(length = 20)
@@ -61,10 +62,14 @@ public class Estudiante {
     @Column(nullable = false)
     private Boolean activo = true;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @OneToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id", unique = true)
     @JsonIgnore
     private Usuario usuario;
+
+    public String getNombres() { return usuario == null ? nombres : usuario.getNombre(); }
+    public String getApellidos() { return usuario == null ? apellidos : usuario.getApellido(); }
+    public String getCorreo() { return usuario == null ? correo : usuario.getEmail(); }
 
     @OneToMany(mappedBy = "estudiante", fetch = FetchType.LAZY)
     @JsonIgnore

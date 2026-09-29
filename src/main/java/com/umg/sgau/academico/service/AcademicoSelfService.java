@@ -55,7 +55,8 @@ public class AcademicoSelfService {
     public AcademicoDTOs.DocentePerfil docente(Authentication auth) {
         Docente d = docenteActual(auth);
         return new AcademicoDTOs.DocentePerfil(d.getId(), d.getCodigoDocente(), d.getNombre(),
-                d.getApellido(), d.getEmail(), d.getTelefono(), d.getEspecialidad(), d.getActivo());
+                d.getApellido(), d.getEmail(), d.getTelefono(), d.getEspecialidad(), d.getActivo(),
+                d.getUsuario() == null ? "PERFIL_HISTORICO" : "USUARIO");
     }
 
     public List<AcademicoDTOs.Curso> cursosDocente(Authentication auth) {
@@ -94,7 +95,8 @@ public class AcademicoSelfService {
     public AcademicoDTOs.EstudiantePerfil estudiante(Authentication auth) {
         Estudiante e = estudianteActual(auth);
         return new AcademicoDTOs.EstudiantePerfil(e.getId(), e.getCodigoEstudiantil(), e.getNombres(),
-                e.getApellidos(), e.getCorreo(), e.getTelefono(), e.getDireccion(), e.getActivo());
+                e.getApellidos(), e.getCorreo(), e.getTelefono(), e.getDireccion(), e.getActivo(),
+                e.getUsuario() == null ? "PERFIL_HISTORICO" : "USUARIO");
     }
 
     public Page<AcademicoDTOs.Inscripcion> inscripcionesEstudiante(Authentication auth, Pageable pageable) {

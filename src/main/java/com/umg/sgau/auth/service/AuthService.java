@@ -16,7 +16,6 @@ import com.umg.sgau.usuario.entity.Usuario;
 import com.umg.sgau.usuario.mapper.UsuarioMapper;
 import com.umg.sgau.usuario.repository.UsuarioRepository;
 import com.umg.sgau.usuario.service.UsuarioService;
-import com.umg.sgau.academico.service.AcademicIdentityPolicy;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -115,27 +114,6 @@ public class AuthService {
         if (usuarioRepository.existsByEmailIgnoreCaseAndIdNot(email, usuario.getId())) {
             throw new IllegalArgumentException("Ya existe un usuario con ese email");
         }
-        estudianteRepository.findByUsuarioId(usuario.getId()).ifPresent(estudiante -> {
-            AcademicIdentityPolicy.validar(usuario, estudiante.getNombres(), estudiante.getApellidos(), estudiante.getCorreo());
-            if (estudianteRepository.existsByCorreoIgnoreCaseAndIdNot(email, estudiante.getId())) {
-                throw new IllegalArgumentException("Ya existe un usuario con ese email");
-            }
-            estudiante.setCorreo(email);
-            estudiante.setNombres(request.getNombre().trim());
-            estudiante.setApellidos(request.getApellido().trim());
-            estudianteRepository.save(estudiante);
-        });
-        docenteRepository.findByUsuarioId(usuario.getId()).ifPresent(docente -> {
-            AcademicIdentityPolicy.validar(usuario, docente.getNombre(), docente.getApellido(), docente.getEmail());
-            if (docenteRepository.existsByEmailIgnoreCaseAndIdNot(email, docente.getId())) {
-                throw new IllegalArgumentException("Ya existe un usuario con ese email");
-            }
-            docente.setEmail(email);
-            docente.setNombre(request.getNombre().trim());
-            docente.setApellido(request.getApellido().trim());
-            docenteRepository.save(docente);
-        });
-
         boolean usernameCambio = !usuario.getUsername().equals(username);
         usuario.setUsername(username);
         usuario.setEmail(email);

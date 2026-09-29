@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SGAU Backend API",
-    "description": "Autenticacion y autoservicio de perfil. Las operaciones /api/auth/me se autorizan con JWT y no requieren permisos administrativos.",
+    "description": "Autenticacion, vinculacion Usuario-Docente/Estudiante y consultas academicas autenticadas. Login guarda JWT, usuarioId, docenteId y estudianteId para las pruebas siguientes.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -19,7 +19,10 @@
                   "pm.test('Login exitoso', () => pm.response.to.have.status(200));",
                   "const body = pm.response.json();",
                   "pm.expect(body.permisos).to.be.an('array');",
-                  "if (body.accessToken) pm.collectionVariables.set('jwtToken', body.accessToken);"
+                  "if (body.accessToken) pm.collectionVariables.set('jwtToken', body.accessToken);",
+                  "if (body.usuarioId) pm.collectionVariables.set('usuarioId', body.usuarioId);",
+                  "if (body.docenteId) pm.collectionVariables.set('docenteId', body.docenteId);",
+                  "if (body.estudianteId) pm.collectionVariables.set('estudianteId', body.estudianteId);"
                 ]
               }
             }
@@ -49,7 +52,7 @@
             "method": "GET",
             "header": [],
             "url": "{{baseUrl}}/api/auth/me",
-            "description": "Devuelve usuarioId, username, email, nombre, apellido, roles y permisos efectivos. Conserva el campo id por compatibilidad."
+            "description": "Devuelve los datos del usuario y sus roles/permisos. Para cuentas vinculadas también incluye docenteId o estudianteId. No devuelve la contraseña."
           },
           "response": []
         },
@@ -122,6 +125,115 @@
           "response": []
         }
       ]
+    },
+    {
+      "name": "Perfiles académicos vinculados",
+      "description": "Crear un perfil académico con acceso a la app crea/vincula la cuenta del rol correspondiente. usuarioId puede usarse para vincular una cuenta existente; accesoApp=true junto con username/password solicita la creación de una cuenta nueva. Los nombres y correo del perfil deben coincidir con la identidad de la cuenta.",
+      "item": [
+        {
+          "name": "Crear docente con cuenta nueva",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"codigoDocente\": \"DOC-0001\",\n  \"nombre\": \"María\",\n  \"apellido\": \"López\",\n  \"email\": \"maria.lopez@sgau.edu.gt\",\n  \"telefono\": \"55551234\",\n  \"especialidad\": \"Matemática\",\n  \"accesoApp\": true,\n  \"username\": \"mlopez\",\n  \"password\": \"{{newPassword}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/docentes",
+            "description": "Crea perfil y cuenta vinculados con rol DOCENTE. Respuesta de perfil sin contraseña. Requiere permisos administrativos de docentes."
+          },
+          "response": []
+        },
+        {
+          "name": "Crear estudiante con cuenta nueva",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"codigoEstudiantil\": \"EST-0001\",\n  \"numeroIdentificacion\": \"1234567890101\",\n  \"nombres\": \"Juan\",\n  \"apellidos\": \"Pérez\",\n  \"fechaNacimiento\": \"2002-05-15\",\n  \"correo\": \"juan.perez@sgau.edu.gt\",\n  \"telefono\": \"55551234\",\n  \"direccion\": \"Ciudad de Guatemala\",\n  \"accesoApp\": true,\n  \"username\": \"jperez\",\n  \"password\": \"{{newPassword}}\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/estudiantes",
+            "description": "Crea perfil y cuenta vinculados con rol ESTUDIANTE. El número de identificación y código deben ser únicos. Respuesta sin contraseña."
+          },
+          "response": []
+        },
+        {
+          "name": "Vincular docente a una cuenta existente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"codigoDocente\": \"DOC-0002\",\n  \"nombre\": \"María\",\n  \"apellido\": \"López\",\n  \"email\": \"maria.lopez@sgau.edu.gt\",\n  \"telefono\": \"55551234\",\n  \"especialidad\": \"Matemática\",\n  \"usuarioId\": {{usuarioId}},\n  \"accesoApp\": true\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/docentes",
+            "description": "Vincula una cuenta existente con rol DOCENTE. Los nombres, apellidos y correo deben corresponder a la misma persona; las identidades contradictorias se rechazan."
+          },
+          "response": []
+        },
+        {
+          "name": "Vincular estudiante a una cuenta existente",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"codigoEstudiantil\": \"EST-0002\",\n  \"numeroIdentificacion\": \"1234567890102\",\n  \"nombres\": \"Juan\",\n  \"apellidos\": \"Pérez\",\n  \"fechaNacimiento\": \"2002-05-15\",\n  \"correo\": \"juan.perez@sgau.edu.gt\",\n  \"telefono\": \"55551234\",\n  \"direccion\": \"Ciudad de Guatemala\",\n  \"usuarioId\": {{usuarioId}},\n  \"accesoApp\": true\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/estudiantes",
+            "description": "Vincula una cuenta existente con rol ESTUDIANTE. Los nombres, apellidos y correo deben corresponder a la misma persona; las identidades contradictorias se rechazan."
+          },
+          "response": []
+        },
+        {
+          "name": "Listar docentes activos para asignación",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/docentes/activos", "description": "Lista perfiles docentes activos disponibles para seleccionar/asignar; no filtra únicamente por roles de usuario." },
+          "response": []
+        },
+        {
+          "name": "Listar estudiantes activos para administración",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/estudiantes/activos", "description": "Lista perfiles académicos de estudiantes activos (acceso administrativo)." },
+          "response": []
+        },
+        {
+          "name": "Editar datos académicos de docente",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"codigoDocente\": \"DOC-0001\",\n  \"telefono\": \"55551234\",\n  \"especialidad\": \"Matemática avanzada\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/docentes/{{docenteId}}",
+            "description": "Solo campos académicos/contacto; nombre, apellido y email se actualizan en Usuario."
+          },
+          "response": []
+        },
+        {
+          "name": "Editar datos académicos de estudiante",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"codigoEstudiantil\": \"EST-0001\",\n  \"numeroIdentificacion\": \"1234567890101\",\n  \"fechaNacimiento\": \"2002-05-15\",\n  \"telefono\": \"55551234\",\n  \"direccion\": \"Ciudad de Guatemala\"\n}", "options": { "raw": { "language": "json" } } },
+            "url": "{{baseUrl}}/api/estudiantes/{{estudianteId}}",
+            "description": "Solo campos académicos/contacto; nombres, apellidos y correo se actualizan en Usuario."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Mi información académica (JWT)",
+      "description": "Rutas basadas en la identidad autenticada del JWT. No enviar usuarioId, docenteId ni estudianteId para delimitar el acceso.",
+      "item": [
+        { "name": "Mi perfil docente", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/academico/docente/me", "description": "Perfil académico asociado a la cuenta docente autenticada." }, "response": [] },
+        { "name": "Mis cursos docentes (por ciclo opcional)", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/academico/docente/me/cursos?cicloAnio={{cicloAnio}}", "description": "Cursos y ciclos asignados al docente autenticado. Quita el parámetro cicloAnio para consultar todos los ciclos." }, "response": [] },
+        { "name": "Estudiantes inscritos en mi curso", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/academico/docente/me/cursos/{{cursoId}}/estudiantes?cicloAnio={{cicloAnio}}&page=0&size=20", "description": "Solo estudiantes inscritos en un curso/ciclo impartido por el docente autenticado." }, "response": [] },
+        { "name": "Notas de mi curso", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/academico/docente/me/cursos/{{cursoId}}/notas?cicloAnio={{cicloAnio}}&page=0&size=20", "description": "Notas de estudiantes y ciclos asignados al docente autenticado." }, "response": [] },
+        { "name": "Mi perfil estudiante", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/academico/estudiante/me", "description": "Perfil académico asociado a la cuenta estudiante autenticada." }, "response": [] },
+        { "name": "Mi carrera", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/academico/estudiante/me/carrera", "description": "Carrera propia del estudiante autenticado." }, "response": [] },
+        { "name": "Plan de carrera y cursos inscritos", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/academico/estudiante/me/plan-carrera", "description": "Distingue cursosDisponibles del plan de cursosInscritos e incluye créditos del plan e inscritos." }, "response": [] },
+        { "name": "Mis cursos inscritos", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/academico/estudiante/me/cursos-inscritos", "description": "Cursos en los que el estudiante tiene inscripción válida." }, "response": [] },
+        { "name": "Mis inscripciones", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/academico/estudiante/me/inscripciones?page=0&size=20", "description": "Inscripciones del estudiante autenticado." }, "response": [] },
+        { "name": "Mis docentes", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/academico/estudiante/me/docentes", "description": "Docentes vinculados a sus cursos inscritos." }, "response": [] },
+        { "name": "Mis notas", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/academico/estudiante/me/notas?page=0&size=20", "description": "Notas propias del estudiante autenticado." }, "response": [] }
+      ]
+    },
+    {
+      "name": "Notas e inscripciones (administración/docencia)",
+      "item": [
+        { "name": "Registrar nota (inscripción válida requerida)", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "POST", "header": [{ "key": "Content-Type", "value": "application/json" }], "body": { "mode": "raw", "raw": "{\n  \"estudianteId\": {{estudianteId}},\n  \"cursoId\": {{cursoId}},\n  \"cicloAnio\": {{cicloAnio}},\n  \"tipoEvaluacion\": \"Parcial 1\",\n  \"calificacion\": 85.50,\n  \"observaciones\": \"Evaluación del primer parcial\"\n}", "options": { "raw": { "language": "json" } } }, "url": "{{baseUrl}}/api/notas", "description": "El estudiante debe tener inscripción válida para el mismo curso y ciclo. El docente autenticado solo puede gestionar cursos asignados; concepto duplicado o relación inválida produce error." }, "response": [] },
+        { "name": "Listar inscripciones administrativas", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/inscripciones?page=0&size=20", "description": "Listado global sujeto a permisos administrativos; filtros disponibles en estudianteId, cursoId, carreraId y cicloAnio según el controlador." }, "response": [] },
+        { "name": "Cursos de una carrera", "request": { "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{jwtToken}}", "type": "string" }] }, "method": "GET", "header": [], "url": "{{baseUrl}}/api/cursos/carrera/{{carreraId}}", "description": "Cursos del plan asociado a la carrera." }, "response": [] }
+      ]
     }
   ],
   "auth": {
@@ -138,6 +250,12 @@
     { "key": "newNombre", "value": "Nuevo nombre" },
     { "key": "newApellido", "value": "Nuevo apellido" },
     { "key": "currentPassword", "value": "ContrasenaActual123*" },
-    { "key": "newPassword", "value": "NuevaContrasena123*" }
+    { "key": "newPassword", "value": "NuevaContrasena123*" },
+    { "key": "usuarioId", "value": "1" },
+    { "key": "docenteId", "value": "" },
+    { "key": "estudianteId", "value": "" },
+    { "key": "cursoId", "value": "1" },
+    { "key": "carreraId", "value": "1" },
+    { "key": "cicloAnio", "value": "2026" }
   ]
 }

@@ -154,7 +154,18 @@ class RoleScopeIntegrationTest {
         Usuario u = new Usuario(); u.setUsername(username); u.setEmail(email); u.setNombre("Usuario");
         u.setApellido("Prueba"); u.setPassword(passwordEncoder.encode("Usuario123*")); u.setActivo(true);
         u.setRoles(new HashSet<>(Set.of(rolRepository.findWithPermisosById(rol.getId()).orElseThrow())));
-        usuarioRepository.save(u);
+        Usuario usuarioGuardado = usuarioRepository.save(u);
+        if ("ESTUDIANTE".equalsIgnoreCase(rol.getCodigo())) {
+            estudianteRepository.findByCorreoIgnoreCase(email).ifPresent(perfil -> {
+                perfil.setUsuario(usuarioGuardado);
+                estudianteRepository.save(perfil);
+            });
+        } else if ("DOCENTE".equalsIgnoreCase(rol.getCodigo())) {
+            docenteRepository.findByEmailIgnoreCase(email).ifPresent(perfil -> {
+                perfil.setUsuario(usuarioGuardado);
+                docenteRepository.save(perfil);
+            });
+        }
     }
 
     private Estudiante estudiante(String codigo, String correo) {

@@ -21,21 +21,25 @@ public class EstudianteServiceImpl implements EstudianteService {
     @Override public Estudiante crearOVincular(Estudiante e, Long usuarioId, Boolean acceso, String username, String password) {
         Estudiante codigo=estudianteRepository.findByCodigoEstudiantil(e.getCodigoEstudiantil()).orElse(null);
         Estudiante doc=estudianteRepository.findByNumeroIdentificacion(e.getNumeroIdentificacion()).orElse(null);
-        Estudiante correo=estudianteRepository.findByCorreoIgnoreCase(e.getCorreo()).orElse(null);
+        Estudiante correo=estudianteRepository.findByCorreoIgnoreCase(e.getCorreo())
+                .or(() -> estudianteRepository.findByUsuario_EmailIgnoreCase(e.getCorreo())).orElse(null);
         if(codigo!=null||doc!=null||correo!=null) {
             if(codigo==null||doc==null||correo==null||!codigo.getId().equals(doc.getId())||!codigo.getId().equals(correo.getId()))
                 throw new IllegalArgumentException("El codigo, identificacion o correo pertenece a otro estudiante");
             if(codigo.getUsuario()!=null) {
                 if(usuarioId==null||codigo.getUsuario().getId().equals(usuarioId)) {
-                    AcademicIdentityPolicy.validar(codigo.getUsuario(),codigo.getNombres(),codigo.getApellidos(),codigo.getCorreo());
+                    AcademicIdentityPolicy.validar(codigo.getUsuario(),e.getNombres(),e.getApellidos(),e.getCorreo());
                     return codigo;
                 }
                 throw new IllegalArgumentException("El estudiante ya esta vinculado a otro usuario");
             }
-            codigo.setUsuario(accountLinks.resolver(usuarioId,acceso,username,password,e.getCorreo(),e.getNombres(),e.getApellidos(),"ESTUDIANTE"));
+            var usuario = accountLinks.resolver(usuarioId,acceso,username,password,e.getCorreo(),e.getNombres(),e.getApellidos(),"ESTUDIANTE");
+            if (usuario != null) AcademicIdentityPolicy.validar(usuario,codigo.getNombres(),codigo.getApellidos(),codigo.getCorreo());
+            codigo.setUsuario(usuario);
             return estudianteRepository.save(codigo);
         }
         e.setUsuario(accountLinks.resolver(usuarioId,acceso,username,password,e.getCorreo(),e.getNombres(),e.getApellidos(),"ESTUDIANTE"));
+        if (e.getUsuario() != null) { e.setNombres(null); e.setApellidos(null); e.setCorreo(null); }
         e.setActivo(true); return estudianteRepository.save(e);
     }
     @Override @Transactional(readOnly=true) public Estudiante obtenerPorId(Long id) { return estudianteRepository.findById(id).orElseThrow(()->new EstudianteNoEncontradoException(id)); }
@@ -44,13 +48,8 @@ public class EstudianteServiceImpl implements EstudianteService {
         Estudiante a=obtenerPorId(id);
         if(estudianteRepository.existsByCodigoEstudiantilAndIdNot(e.getCodigoEstudiantil(),id)) throw new IllegalArgumentException("Codigo estudiantil duplicado");
         if(estudianteRepository.existsByNumeroIdentificacionAndIdNot(e.getNumeroIdentificacion(),id)) throw new IllegalArgumentException("Identificacion duplicada");
-        if(estudianteRepository.existsByCorreoAndIdNot(e.getCorreo(),id)) throw new IllegalArgumentException("Correo duplicado");
         a.setCodigoEstudiantil(e.getCodigoEstudiantil()); a.setNumeroIdentificacion(e.getNumeroIdentificacion());
-        if(a.getUsuario()!=null) AcademicIdentityPolicy.validar(a.getUsuario(),e.getNombres(),e.getApellidos(),e.getCorreo());
-        a.setNombres(a.getUsuario()==null?e.getNombres():a.getUsuario().getNombre());
-        a.setApellidos(a.getUsuario()==null?e.getApellidos():a.getUsuario().getApellido());
         a.setFechaNacimiento(e.getFechaNacimiento());
-        a.setCorreo(a.getUsuario()==null?e.getCorreo():a.getUsuario().getEmail());
         a.setTelefono(e.getTelefono()); a.setDireccion(e.getDireccion()); return estudianteRepository.save(a);
     }
     @Override public Estudiante cambiarEstado(Long id,Boolean activo) { Estudiante e=obtenerPorId(id);e.setActivo(activo);return estudianteRepository.save(e); }

@@ -98,13 +98,13 @@ public class AccessScopeService {
     }
 
     public Optional<Long> idEstudiante(Authentication authentication) {
-        return usuario(authentication).flatMap(u -> estudianteRepository.findByUsuarioId(u.getId())
-                .or(() -> estudianteRepository.findByCorreoIgnoreCase(u.getEmail()))).map(e -> e.getId());
+        return usuario(authentication).flatMap(u -> estudianteRepository.findByUsuarioId(u.getId()))
+                .map(e -> e.getId());
     }
 
     public Optional<Long> idDocente(Authentication authentication) {
-        return usuario(authentication).flatMap(u -> docenteRepository.findByUsuarioId(u.getId())
-                .or(() -> docenteRepository.findByEmailIgnoreCase(u.getEmail()))).map(d -> d.getId());
+        return usuario(authentication).flatMap(u -> docenteRepository.findByUsuarioId(u.getId()))
+                .map(d -> d.getId());
     }
 
     private Optional<com.umg.sgau.usuario.entity.Usuario> usuario(Authentication authentication) {

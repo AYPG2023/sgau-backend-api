@@ -36,10 +36,7 @@ public final class EstudianteMapper {
 
         estudiante.setCodigoEstudiantil(dto.getCodigoEstudiantil());
         estudiante.setNumeroIdentificacion(dto.getNumeroIdentificacion());
-        estudiante.setNombres(dto.getNombres());
-        estudiante.setApellidos(dto.getApellidos());
         estudiante.setFechaNacimiento(dto.getFechaNacimiento());
-        estudiante.setCorreo(dto.getCorreo());
         estudiante.setTelefono(dto.getTelefono());
         estudiante.setDireccion(dto.getDireccion());
 
@@ -61,6 +58,7 @@ public final class EstudianteMapper {
                 .activo(estudiante.getActivo())
                 .usuarioId(estudiante.getUsuario() == null ? null : estudiante.getUsuario().getId())
                 .accesoApp(estudiante.getUsuario() != null && Boolean.TRUE.equals(estudiante.getUsuario().getActivo()))
+                .identidadFuente(estudiante.getUsuario() == null ? "PERFIL_HISTORICO" : "USUARIO")
                 .fechaCreacion(estudiante.getFechaCreacion())
                 .fechaActualizacion(estudiante.getFechaActualizacion())
                 .build();
@@ -74,6 +72,7 @@ public final class EstudianteMapper {
                 .nombres(estudiante.getNombres())
                 .apellidos(estudiante.getApellidos())
                 .activo(estudiante.getActivo())
+                .identidadFuente(estudiante.getUsuario() == null ? "PERFIL_HISTORICO" : "USUARIO")
                 .build();
     }
 

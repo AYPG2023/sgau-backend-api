@@ -17,6 +17,7 @@ public interface DocenteRepository  extends JpaRepository <Docente, Long> {
 	Optional<Docente> findByEmail(String email);
     Optional<Docente> findByEmailIgnoreCase(String email);
     Optional<Docente> findByUsuarioId(Long usuarioId);
+    Optional<Docente> findByUsuario_EmailIgnoreCase(String email);
     boolean existsByUsuarioId(Long usuarioId);
     boolean existsByEmailIgnoreCaseAndIdNot(String email, Long id);
 
@@ -33,12 +34,12 @@ public interface DocenteRepository  extends JpaRepository <Docente, Long> {
     Page<Docente> findByActivo(Boolean activo, Pageable pageable);
 
     @Query("""
-            SELECT d FROM Docente d
+            SELECT d FROM Docente d LEFT JOIN d.usuario u
             WHERE (:activo IS NULL OR d.activo = :activo)
               AND (
-                   LOWER(d.nombre) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR
-                   LOWER(d.apellido) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR
-                   LOWER(d.email) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR
+                   LOWER(COALESCE(u.nombre, d.nombre)) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR
+                   LOWER(COALESCE(u.apellido, d.apellido)) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR
+                   LOWER(COALESCE(u.email, d.email)) LIKE LOWER(CONCAT('%', :busqueda, '%')) OR
                    LOWER(d.codigoDocente) LIKE LOWER(CONCAT('%', :busqueda, '%')))
             """)
     Page<Docente> buscarConFiltros(

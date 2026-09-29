@@ -21,6 +21,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
 
 @SpringBootTest
 @Transactional
@@ -32,6 +33,7 @@ class AcademicAccountLinkIntegrationTest {
     @org.springframework.beans.factory.annotation.Autowired UsuarioRepository usuarios;
     @org.springframework.beans.factory.annotation.Autowired RolRepository roles;
     @org.springframework.beans.factory.annotation.Autowired AuthService auth;
+    @org.springframework.beans.factory.annotation.Autowired EntityManager entityManager;
     Rol rolDocente; Rol rolEstudiante;
 
     @BeforeEach void roles() {
@@ -56,6 +58,11 @@ class AcademicAccountLinkIntegrationTest {
         assertThat(repetido.getId()).isEqualTo(creado.getId());
         assertThat(estudianteRepository.count()).isGreaterThanOrEqualTo(1);
         assertThat(estudiantes.obtenerActivos()).extracting(Estudiante::getId).contains(creado.getId());
+        Estudiante identidadDistinta=Estudiante.builder().codigoEstudiantil("EST-LINK-1")
+                .numeroIdentificacion("ID-LINK-1").nombres("Otra").apellidos("Persona")
+                .fechaNacimiento(LocalDate.of(2000,1,1)).correo(correcto.getEmail()).build();
+        assertThatThrownBy(() -> estudiantes.crearOVincular(identidadDistinta,correcto.getId(),true,null,null))
+                .isInstanceOf(com.umg.sgau.academico.exception.IdentidadAcademicaInconsistenteException.class);
 
         Usuario incorrecto=usuario("wrong_role_1","wrong.role.1@sgau.test","Luis","Perez",rolDocente);
         assertThatThrownBy(() -> estudiantes.crearOVincular(
@@ -81,6 +88,19 @@ class AcademicAccountLinkIntegrationTest {
         assertThat(docenteRepository.findByUsuarioId(maria.getId())).isEmpty();
     }
 
+    @Test void noVinculaUnPerfilHistoricoConIdentidadContradictoriaAunqueElRequestCoincidaConUsuario() {
+        Usuario maria=usuario("maria_legacy","legacy.identity@sgau.test","Maria","Lopez",rolDocente);
+        Docente diego=Docente.builder().codigoDocente("DOC-LEGACY-1").nombre("Diego").apellido("Chavez")
+                .email(maria.getEmail()).especialidad("Fisica").build();
+        docentes.crear(diego);
+        Docente request=Docente.builder().codigoDocente("DOC-LEGACY-1").nombre("Maria").apellido("Lopez")
+                .email(maria.getEmail()).especialidad("Fisica").build();
+
+        assertThatThrownBy(() -> docentes.crearOVincular(request,maria.getId(),true,null,null))
+                .isInstanceOf(com.umg.sgau.academico.exception.IdentidadAcademicaInconsistenteException.class);
+        assertThat(docenteRepository.findByUsuarioId(maria.getId())).isEmpty();
+    }
+
     @Test void actualizacionDeUsuarioSincronizaDatosCompartidosDelPerfilVinculado() {
         Usuario maria=usuario("maria_sync","maria.sync@sgau.test","Maria","Lopez",rolDocente);
         Docente perfil=docentes.crearOVincular(Docente.builder().codigoDocente("DOC-SYNC-1").nombre("Maria")
@@ -96,14 +116,44 @@ class AcademicAccountLinkIntegrationTest {
         assertThat(actualizado.getEspecialidad()).isEqualTo("Quimica");
     }
 
-    @Test void actualizacionAcademicaNoPuedeCambiarLaIdentidadDelUsuario() {
+    @Test void actualizacionDeUsuarioSeReflejaSinCopiarLaIdentidadAlPerfil() {
         Usuario maria=usuario("maria_update","maria.update@sgau.test","Maria","Lopez",rolDocente);
         Docente perfil=docentes.crearOVincular(Docente.builder().codigoDocente("DOC-UPD-1").nombre("Maria")
                 .apellido("Lopez").email(maria.getEmail()).especialidad("Historia").build(),maria.getId(),true,null,null);
-        Docente cambios=Docente.builder().codigoDocente("DOC-UPD-1").nombre("Diego").apellido("Chavez")
-                .email(maria.getEmail()).especialidad("Historia").build();
-        assertThatThrownBy(() -> docentes.actualizar(perfil.getId(),cambios))
-                .isInstanceOf(com.umg.sgau.academico.exception.IdentidadAcademicaInconsistenteException.class);
+        assertThat(entityManager.createNativeQuery("SELECT nombre FROM docentes WHERE id = :id")
+                .setParameter("id", perfil.getId()).getSingleResult()).isNull();
+
+        var cambio=new com.umg.sgau.auth.dto.PerfilUpdateRequestDTO();
+        cambio.setUsername("maria_update"); cambio.setEmail("maria.actualizada@sgau.test");
+        cambio.setNombre("Maria Elena"); cambio.setApellido("Lopez");
+        auth.actualizarPerfil("maria_update",cambio);
+
+        Docente datosAcademicos=Docente.builder().codigoDocente("DOC-UPD-1")
+                .telefono("55550000").especialidad("Historia avanzada").build();
+        Docente actualizado=docentes.actualizar(perfil.getId(),datosAcademicos);
+        assertThat(actualizado.getNombre()).isEqualTo("Maria Elena");
+        assertThat(actualizado.getEmail()).isEqualTo("maria.actualizada@sgau.test");
+        assertThat(actualizado.getEspecialidad()).isEqualTo("Historia avanzada");
+        assertThat(entityManager.createNativeQuery("SELECT email FROM docentes WHERE id = :id")
+                .setParameter("id", perfil.getId()).getSingleResult()).isNull();
+    }
+
+    @Test void perfilEstudianteConCuentaGuardaSoloCamposAcademicosYRespondeLaIdentidadDeUsuario() {
+        Estudiante creado=estudiantes.crearOVincular(estudiante("EST-IDENTITY-1","ID-IDENTITY-1",
+                "student.identity@sgau.test"),null,true,"student_identity","Password123*!");
+        assertThat(creado.getUsuario()).isNotNull();
+        assertThat(creado.getNombres()).isEqualTo(creado.getUsuario().getNombre());
+        assertThat(creado.getCorreo()).isEqualTo(creado.getUsuario().getEmail());
+        assertThat(entityManager.createNativeQuery("SELECT correo FROM estudiantes WHERE id = :id")
+                .setParameter("id", creado.getId()).getSingleResult()).isNull();
+
+        Estudiante cambios=Estudiante.builder().codigoEstudiantil("EST-IDENTITY-1")
+                .numeroIdentificacion("ID-IDENTITY-1").fechaNacimiento(LocalDate.of(2000,1,1))
+                .telefono("55550000").direccion("Zona 1").build();
+        Estudiante actualizado=estudiantes.actualizar(creado.getId(),cambios);
+        assertThat(actualizado.getNombres()).isEqualTo("Luis");
+        assertThat(actualizado.getCorreo()).isEqualTo("student.identity@sgau.test");
+        assertThat(actualizado.getDireccion()).isEqualTo("Zona 1");
     }
 
     private Rol rol(String codigo) {

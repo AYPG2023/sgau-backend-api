@@ -20,6 +20,7 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
     Optional<Estudiante> findByCorreo(String correo);
     Optional<Estudiante> findByCorreoIgnoreCase(String correo);
     Optional<Estudiante> findByUsuarioId(Long usuarioId);
+    Optional<Estudiante> findByUsuario_EmailIgnoreCase(String email);
     boolean existsByUsuarioId(Long usuarioId);
     boolean existsByCorreoIgnoreCaseAndIdNot(String correo, Long id);
 
@@ -46,16 +47,16 @@ public interface EstudianteRepository extends JpaRepository<Estudiante, Long> {
 
     @Query("""
     SELECT e
-    FROM Estudiante e
+    FROM Estudiante e LEFT JOIN e.usuario u
     WHERE
         (
             :texto IS NULL
             OR :texto = ''
             OR LOWER(e.codigoEstudiantil) LIKE LOWER(CONCAT('%', :texto, '%'))
             OR LOWER(e.numeroIdentificacion) LIKE LOWER(CONCAT('%', :texto, '%'))
-            OR LOWER(e.nombres) LIKE LOWER(CONCAT('%', :texto, '%'))
-            OR LOWER(e.apellidos) LIKE LOWER(CONCAT('%', :texto, '%'))
-            OR LOWER(e.correo) LIKE LOWER(CONCAT('%', :texto, '%'))
+            OR LOWER(COALESCE(u.nombre, e.nombres)) LIKE LOWER(CONCAT('%', :texto, '%'))
+            OR LOWER(COALESCE(u.apellido, e.apellidos)) LIKE LOWER(CONCAT('%', :texto, '%'))
+            OR LOWER(COALESCE(u.email, e.correo)) LIKE LOWER(CONCAT('%', :texto, '%'))
         )
         AND
         (

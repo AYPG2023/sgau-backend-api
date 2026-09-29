@@ -18,4 +18,6 @@ public class EstudianteSummaryDTO {
     private String apellidos;
 
     private Boolean activo;
+
+    private String identidadFuente;
 }
