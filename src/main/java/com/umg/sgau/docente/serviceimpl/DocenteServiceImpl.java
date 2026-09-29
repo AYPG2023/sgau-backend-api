@@ -1,6 +1,7 @@
 package com.umg.sgau.docente.serviceimpl;
 
 import com.umg.sgau.academico.service.AcademicAccountLinkService;
+import com.umg.sgau.academico.service.AcademicIdentityPolicy;
 import com.umg.sgau.docente.entity.Docente;
 import com.umg.sgau.docente.exception.DocenteDuplicadoException;
 import com.umg.sgau.docente.exception.DocenteNoEncontradoException;
@@ -27,7 +28,10 @@ public class DocenteServiceImpl implements DocenteService {
             if (codigo == null || email == null || !codigo.getId().equals(email.getId()))
                 throw new DocenteDuplicadoException("El codigo o email pertenece a otro docente");
             if (codigo.getUsuario() != null) {
-                if (usuarioId == null || codigo.getUsuario().getId().equals(usuarioId)) return codigo;
+                if (usuarioId == null || codigo.getUsuario().getId().equals(usuarioId)) {
+                    AcademicIdentityPolicy.validar(codigo.getUsuario(), codigo.getNombre(), codigo.getApellido(), codigo.getEmail());
+                    return codigo;
+                }
                 throw new DocenteDuplicadoException("El docente ya esta vinculado a otro usuario");
             }
             codigo.setUsuario(accountLinks.resolver(usuarioId, acceso, username, password,
@@ -47,8 +51,12 @@ public class DocenteServiceImpl implements DocenteService {
         Docente a=obtenerPorId(id);
         if(docentes.existsByCodigoDocenteAndIdNot(d.getCodigoDocente(),id)) throw new DocenteDuplicadoException("Codigo duplicado");
         if(docentes.existsByEmailAndIdNot(d.getEmail(),id)) throw new DocenteDuplicadoException("Email duplicado");
-        a.setCodigoDocente(d.getCodigoDocente()); a.setNombre(d.getNombre()); a.setApellido(d.getApellido());
-        a.setEmail(d.getEmail()); a.setTelefono(d.getTelefono()); a.setEspecialidad(d.getEspecialidad()); return docentes.save(a);
+        if (a.getUsuario()!=null) AcademicIdentityPolicy.validar(a.getUsuario(),d.getNombre(),d.getApellido(),d.getEmail());
+        a.setCodigoDocente(d.getCodigoDocente());
+        a.setNombre(a.getUsuario()==null?d.getNombre():a.getUsuario().getNombre());
+        a.setApellido(a.getUsuario()==null?d.getApellido():a.getUsuario().getApellido());
+        a.setEmail(a.getUsuario()==null?d.getEmail():a.getUsuario().getEmail());
+        a.setTelefono(d.getTelefono()); a.setEspecialidad(d.getEspecialidad()); return docentes.save(a);
     }
     @Override public Docente cambiarEstado(Long id, Boolean activo) { Docente d=obtenerPorId(id); d.setActivo(activo); return docentes.save(d); }
     @Override public void eliminar(Long id) { cambiarEstado(id,false); }

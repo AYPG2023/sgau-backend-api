@@ -21,6 +21,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import com.umg.sgau.docente.repository.DocenteRepository;
+import com.umg.sgau.estudiante.repository.EstudianteRepository;
 
 @ExtendWith(MockitoExtension.class)
 class UsuarioServiceImplRolesTest {
@@ -33,12 +35,15 @@ class UsuarioServiceImplRolesTest {
 
     @Mock
     private PasswordEncoder passwordEncoder;
+    @Mock private DocenteRepository docenteRepository;
+    @Mock private EstudianteRepository estudianteRepository;
 
     private UsuarioServiceImpl usuarioService;
 
     @BeforeEach
     void setUp() {
-        usuarioService = new UsuarioServiceImpl(usuarioRepository, rolRepository, passwordEncoder);
+        usuarioService = new UsuarioServiceImpl(usuarioRepository, rolRepository, passwordEncoder,
+                docenteRepository, estudianteRepository);
     }
 
     @Test

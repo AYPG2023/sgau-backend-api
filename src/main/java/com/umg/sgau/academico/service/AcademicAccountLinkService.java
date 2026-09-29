@@ -54,14 +54,15 @@ public class AcademicAccountLinkService {
             usuario = usuarioService.crear(usuario);
         }
 
-        validarRol(usuario, codigoRol);
-        if (!Boolean.TRUE.equals(usuario.getActivo())) {
-            throw new IllegalArgumentException("El usuario vinculado esta inactivo");
-        }
         boolean ocupado = "DOCENTE".equals(codigoRol)
                 ? docentes.existsByUsuarioId(usuario.getId())
                 : estudiantes.existsByUsuarioId(usuario.getId());
         if (ocupado) throw new IllegalArgumentException("El usuario ya tiene un perfil " + codigoRol.toLowerCase());
+        AcademicIdentityPolicy.validar(usuario, nombre, apellido, email);
+        validarRol(usuario, codigoRol);
+        if (!Boolean.TRUE.equals(usuario.getActivo())) {
+            throw new IllegalArgumentException("El usuario vinculado esta inactivo");
+        }
         return usuario;
     }
 

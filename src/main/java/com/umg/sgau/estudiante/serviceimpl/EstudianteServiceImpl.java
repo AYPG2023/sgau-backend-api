@@ -1,6 +1,7 @@
 package com.umg.sgau.estudiante.serviceimpl;
 
 import com.umg.sgau.academico.service.AcademicAccountLinkService;
+import com.umg.sgau.academico.service.AcademicIdentityPolicy;
 import com.umg.sgau.estudiante.entity.Estudiante;
 import com.umg.sgau.estudiante.exception.EstudianteNoEncontradoException;
 import com.umg.sgau.estudiante.repository.EstudianteRepository;
@@ -25,7 +26,10 @@ public class EstudianteServiceImpl implements EstudianteService {
             if(codigo==null||doc==null||correo==null||!codigo.getId().equals(doc.getId())||!codigo.getId().equals(correo.getId()))
                 throw new IllegalArgumentException("El codigo, identificacion o correo pertenece a otro estudiante");
             if(codigo.getUsuario()!=null) {
-                if(usuarioId==null||codigo.getUsuario().getId().equals(usuarioId)) return codigo;
+                if(usuarioId==null||codigo.getUsuario().getId().equals(usuarioId)) {
+                    AcademicIdentityPolicy.validar(codigo.getUsuario(),codigo.getNombres(),codigo.getApellidos(),codigo.getCorreo());
+                    return codigo;
+                }
                 throw new IllegalArgumentException("El estudiante ya esta vinculado a otro usuario");
             }
             codigo.setUsuario(accountLinks.resolver(usuarioId,acceso,username,password,e.getCorreo(),e.getNombres(),e.getApellidos(),"ESTUDIANTE"));
@@ -42,8 +46,12 @@ public class EstudianteServiceImpl implements EstudianteService {
         if(estudianteRepository.existsByNumeroIdentificacionAndIdNot(e.getNumeroIdentificacion(),id)) throw new IllegalArgumentException("Identificacion duplicada");
         if(estudianteRepository.existsByCorreoAndIdNot(e.getCorreo(),id)) throw new IllegalArgumentException("Correo duplicado");
         a.setCodigoEstudiantil(e.getCodigoEstudiantil()); a.setNumeroIdentificacion(e.getNumeroIdentificacion());
-        a.setNombres(e.getNombres()); a.setApellidos(e.getApellidos()); a.setFechaNacimiento(e.getFechaNacimiento());
-        a.setCorreo(e.getCorreo()); a.setTelefono(e.getTelefono()); a.setDireccion(e.getDireccion()); return estudianteRepository.save(a);
+        if(a.getUsuario()!=null) AcademicIdentityPolicy.validar(a.getUsuario(),e.getNombres(),e.getApellidos(),e.getCorreo());
+        a.setNombres(a.getUsuario()==null?e.getNombres():a.getUsuario().getNombre());
+        a.setApellidos(a.getUsuario()==null?e.getApellidos():a.getUsuario().getApellido());
+        a.setFechaNacimiento(e.getFechaNacimiento());
+        a.setCorreo(a.getUsuario()==null?e.getCorreo():a.getUsuario().getEmail());
+        a.setTelefono(e.getTelefono()); a.setDireccion(e.getDireccion()); return estudianteRepository.save(a);
     }
     @Override public Estudiante cambiarEstado(Long id,Boolean activo) { Estudiante e=obtenerPorId(id);e.setActivo(activo);return estudianteRepository.save(e); }
     @Override @Transactional(readOnly=true) public List<Estudiante> obtenerActivos(){return estudianteRepository.findSeleccionables();}

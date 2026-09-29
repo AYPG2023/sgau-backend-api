@@ -73,7 +73,7 @@ class AuthSelfServiceIntegrationTest {
         usuario.setPassword(passwordEncoder.encode(PASSWORD));
         usuario.setActivo(true);
         usuario.setRoles(new HashSet<>(java.util.Set.of(rol)));
-        usuarioRepository.save(usuario);
+        usuario = usuarioRepository.save(usuario);
 
         estudianteRepository.save(Estudiante.builder()
                 .codigoEstudiantil("SELF001")
@@ -82,6 +82,7 @@ class AuthSelfServiceIntegrationTest {
                 .apellidos("Apellido original")
                 .fechaNacimiento(LocalDate.of(2000, 1, 1))
                 .correo("self-service@sgau.test")
+                .usuario(usuario)
                 .activo(true)
                 .build());
     }

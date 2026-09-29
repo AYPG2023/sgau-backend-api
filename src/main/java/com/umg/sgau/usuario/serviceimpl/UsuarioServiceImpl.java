@@ -9,6 +9,9 @@ import com.umg.sgau.usuario.entity.Usuario;
 import com.umg.sgau.usuario.exception.UsuarioNoEncontradoException;
 import com.umg.sgau.usuario.repository.UsuarioRepository;
 import com.umg.sgau.usuario.service.UsuarioService;
+import com.umg.sgau.docente.repository.DocenteRepository;
+import com.umg.sgau.estudiante.repository.EstudianteRepository;
+import com.umg.sgau.academico.service.AcademicIdentityPolicy;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -22,14 +25,20 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final RolRepository rolRepository;
     private final PasswordEncoder passwordEncoder;
+    private final DocenteRepository docenteRepository;
+    private final EstudianteRepository estudianteRepository;
 
     public UsuarioServiceImpl(
             UsuarioRepository usuarioRepository,
             RolRepository rolRepository,
-            PasswordEncoder passwordEncoder) {
+            PasswordEncoder passwordEncoder,
+            DocenteRepository docenteRepository,
+            EstudianteRepository estudianteRepository) {
         this.usuarioRepository = usuarioRepository;
         this.rolRepository = rolRepository;
         this.passwordEncoder = passwordEncoder;
+        this.docenteRepository = docenteRepository;
+        this.estudianteRepository = estudianteRepository;
     }
 
     @Override
@@ -64,6 +73,17 @@ public class UsuarioServiceImpl implements UsuarioService {
     public Usuario actualizar(Long id, Usuario usuario) {
         Usuario usuarioActual = obtenerPorId(id);
         validarDuplicadosAlActualizar(id, usuario);
+
+        docenteRepository.findByUsuarioId(id).ifPresent(docente -> {
+            AcademicIdentityPolicy.validar(usuarioActual, docente.getNombre(), docente.getApellido(), docente.getEmail());
+            docente.setNombre(usuario.getNombre()); docente.setApellido(usuario.getApellido()); docente.setEmail(usuario.getEmail());
+            docenteRepository.save(docente);
+        });
+        estudianteRepository.findByUsuarioId(id).ifPresent(estudiante -> {
+            AcademicIdentityPolicy.validar(usuarioActual, estudiante.getNombres(), estudiante.getApellidos(), estudiante.getCorreo());
+            estudiante.setNombres(usuario.getNombre()); estudiante.setApellidos(usuario.getApellido()); estudiante.setCorreo(usuario.getEmail());
+            estudianteRepository.save(estudiante);
+        });
 
         usuarioActual.setUsername(usuario.getUsername());
         usuarioActual.setEmail(usuario.getEmail());
