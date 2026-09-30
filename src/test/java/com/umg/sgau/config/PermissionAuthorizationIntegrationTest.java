@@ -116,6 +116,26 @@ class PermissionAuthorizationIntegrationTest {
                 .andExpect(jsonPath("$.roles[0].id").value(destino.getId()));
     }
 
+    @Test
+    void inicializadorNoSobrescribePermisosAdministradosDeEstudiante() throws Exception {
+        Permiso permisoElegido = permisoRepository.findByCodigoIgnoreCase(PermissionCatalog.NOTAS_LEER).orElseThrow();
+        Rol estudiante = rolRepository.findByCodigoIgnoreCase("ESTUDIANTE").orElseGet(() -> {
+            Rol nuevo = new Rol();
+            nuevo.setCodigo("ESTUDIANTE");
+            nuevo.setNombre("Estudiante");
+            nuevo.setActivo(true);
+            return rolRepository.save(nuevo);
+        });
+        estudiante.setPermisos(new HashSet<>(Set.of(permisoElegido)));
+        rolRepository.saveAndFlush(estudiante);
+
+        initializer.run(null);
+
+        Rol recargado = rolRepository.findWithPermisosById(estudiante.getId()).orElseThrow();
+        assertThat(recargado.getPermisos()).extracting(Permiso::getCodigo)
+                .containsExactly(PermissionCatalog.NOTAS_LEER);
+    }
+
     private org.springframework.test.web.servlet.ResultActions login(String username) throws Exception {
         return mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
