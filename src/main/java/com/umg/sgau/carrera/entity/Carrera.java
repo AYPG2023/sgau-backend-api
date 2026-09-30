@@ -14,6 +14,7 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.AllArgsConstructor;
@@ -46,6 +47,15 @@ public class Carrera {
 
     @Column(nullable = false)
     private Integer duracionAnios;
+
+    @Column(name = "mensualidad", precision = 10, scale = 2)
+    private BigDecimal mensualidad;
+
+    @Column(name = "cantidad_cuotas")
+    private Integer cantidadCuotas;
+
+    @Column(name = "dia_vencimiento")
+    private Integer diaVencimiento;
 
     @Column(nullable = false)
     private Boolean activo;

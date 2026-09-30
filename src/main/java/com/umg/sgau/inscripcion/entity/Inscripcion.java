@@ -2,6 +2,10 @@ package com.umg.sgau.inscripcion.entity;
 import com.umg.sgau.carrera.entity.Carrera;
 import com.umg.sgau.curso.entity.Curso;
 import com.umg.sgau.estudiante.entity.Estudiante;
+import com.umg.sgau.academico.CicloAcademico;
+import com.umg.sgau.academico.GradoAcademico;
+import com.umg.sgau.academico.SeccionAcademica;
+import com.umg.sgau.academico.MatriculaCarrera;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -45,6 +49,22 @@ public class Inscripcion {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "curso_id")
     private Curso curso;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ciclo_id")
+    private CicloAcademico ciclo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "grado_id")
+    private GradoAcademico gradoCatalogo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "seccion_id")
+    private SeccionAcademica seccionCatalogo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "matricula_carrera_id")
+    private MatriculaCarrera matriculaCarrera;
 
     @Column(nullable = false, length = 50)
     private String grado;

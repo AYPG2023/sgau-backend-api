@@ -16,6 +16,7 @@ public interface ColegiaturaRepository
         extends JpaRepository<Colegiatura, Long> {
 
     boolean existsByIdAndEstudiante_Id(Long id, Long estudianteId);
+    boolean existsByInscripcionCarrera_IdAndNumeroCuota(Long inscripcionId, Integer numeroCuota);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Colegiatura c where c.id = :id")

@@ -7,4 +7,7 @@ public interface SolicitudPagoService {
     List<SolicitudPagoDTOs.Respuesta> propias(Authentication auth);
     List<SolicitudPagoDTOs.Respuesta> pendientes();
     SolicitudPagoDTOs.Respuesta revisar(Long solicitudId, SolicitudPagoDTOs.Revision request);
+    SolicitudPagoDTOs.Respuesta revisar(Authentication auth, Long solicitudId, SolicitudPagoDTOs.Revision request);
+    org.springframework.data.domain.Page<SolicitudPagoDTOs.RevisionItem> buscarRevision(String estado, String texto, org.springframework.data.domain.Pageable pageable);
+    SolicitudPagoDTOs.RevisionItem detalleRevision(Long id);
 }

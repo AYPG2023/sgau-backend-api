@@ -83,6 +83,9 @@ public class CarreraServiceImpl implements CarreraService {
         existente.setNombre(nombreNormalizado);
         existente.setDescripcion(descripcionNormalizada);
         existente.setDuracionAnios(carrera.getDuracionAnios());
+        existente.setMensualidad(carrera.getMensualidad());
+        existente.setCantidadCuotas(carrera.getCantidadCuotas());
+        existente.setDiaVencimiento(carrera.getDiaVencimiento());
 
         return carreraRepository.save(existente);
     }

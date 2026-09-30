@@ -11,6 +11,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import java.math.BigDecimal;
+import jakarta.validation.constraints.DecimalMin;
 
 /**
  * DTO para crear una carrera.
@@ -52,4 +54,11 @@ public class CarreraCreateRequestDTO {
             value = 10,
             message = "La duración no puede superar los 10 años")
     private Integer duracionAnios;
+
+    @DecimalMin(value = "0.01")
+    private BigDecimal mensualidad;
+    @Min(1) @Max(24)
+    private Integer cantidadCuotas;
+    @Min(1) @Max(31)
+    private Integer diaVencimiento;
 }

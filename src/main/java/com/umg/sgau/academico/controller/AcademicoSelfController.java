@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/academico")
@@ -85,4 +88,23 @@ public class AcademicoSelfController {
     @GetMapping("/estudiante/me/estado-cuenta")
     @PreAuthorize("hasAuthority('COLEGIATURAS_LEER')")
     public AcademicoDTOs.EstadoCuenta estadoCuenta(Authentication auth) { return service.estadoCuenta(auth); }
+
+    @GetMapping("/estudiante/me/carreras-disponibles")
+    @PreAuthorize("hasAuthority('CARRERAS_LEER')")
+    public List<AcademicoDTOs.CarreraDisponible> carrerasDisponibles(Authentication auth){return service.carrerasDisponibles(auth);}
+    @GetMapping("/estudiante/me/ciclos-disponibles")
+    @PreAuthorize("hasAuthority('INSCRIPCIONES_LEER')")
+    public List<AcademicoDTOs.Ciclo> ciclosDisponibles(Authentication auth){return service.ciclosDisponibles(auth);}
+    @GetMapping("/estudiante/me/grados-disponibles")
+    @PreAuthorize("hasAuthority('INSCRIPCIONES_LEER')")
+    public List<AcademicoDTOs.Grado> gradosDisponibles(Authentication auth){return service.gradosDisponibles(auth);}
+    @GetMapping("/estudiante/me/grados/{gradoId}/secciones")
+    @PreAuthorize("hasAuthority('INSCRIPCIONES_LEER')")
+    public List<AcademicoDTOs.Seccion> seccionesDisponibles(Authentication auth,@PathVariable Long gradoId){return service.seccionesDisponibles(auth,gradoId);}
+    @PostMapping("/estudiante/me/inscripciones")
+    @PreAuthorize("hasRole('ESTUDIANTE') and hasAuthority('INSCRIPCIONES_CREAR')")
+    public AcademicoDTOs.ResultadoInscripcion inscribirse(Authentication auth,@Valid @RequestBody AcademicoDTOs.SolicitudInscripcion request){return service.inscribirse(auth,request);}
+    @PostMapping("/estudiante/me/cursos/{cursoId}/asignacion")
+    @PreAuthorize("hasRole('ESTUDIANTE') and hasAuthority('INSCRIPCIONES_CREAR')")
+    public AcademicoDTOs.Inscripcion asignarCurso(Authentication auth,@PathVariable Long cursoId){return service.asignarCurso(auth,cursoId);}
 }

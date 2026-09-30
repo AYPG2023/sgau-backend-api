@@ -842,8 +842,51 @@ Ejemplo de registro (la clave debe conservarse al reintentar):
 ```
 
 Respuesta: `{"id":18,"colegiaturaId":4,"monto":250.00,"fechaPago":"2026-09-29","referencia":"TRX-9841","estado":"PENDIENTE"}`. Errores habituales: `400` por monto/fecha/referencia invalidos o monto superior al saldo, `403` si el cargo no es propio y `404` si no existe. Para revisar: `{"estado":"APROBADO"}` o `{"estado":"RECHAZADO","motivo":"Referencia no localizada"}`.
+
+### Matrícula universitaria, oferta y colegiaturas
+
+Un `CicloAcademico` es el período calendario de oferta con nombre, año y fechas concretas (por ejemplo, “Primer semestre 2027”); no representa el semestre/nivel del plan curricular. `Curso.cicloAnio` se conserva como compatibilidad histórica y año de oferta. Los cursos nuevos pueden vincularse al período concreto mediante `PATCH /api/cursos/{id}/ciclo` con `{"cicloId": 1}`. `GradoAcademico` identifica el nivel o año de avance universitario y `SeccionAcademica` es un grupo asociado a ese grado. La matrícula a carrera se guarda en `matriculas_carrera`; las filas de `inscripciones` conservan su significado de asignación a curso y la enlazan con `matricula_carrera_id`. `grado` y `seccion` de texto se conservan para lectura histórica y las relaciones nuevas se guardan en `grado_id`, `seccion_id` y `ciclo_id`.
+
+La mensualidad de carrera es decimal. `cantidadCuotas` determina cuántos cargos mensuales se emiten desde la fecha de inicio del ciclo; `diaVencimiento` establece el día de vencimiento de cada mes (se ajusta al último día de ese mes cuando es menor). Carreras antiguas conservan estos tres campos nulos hasta su configuración. El flujo no emite cargos históricos. Cada cuota guarda `montoTotal`, ciclo, matrícula y número de cuota; un índice único evita cuotas repetidas y cambios posteriores de precio no recalculan los cargos emitidos.
+
+Para el estudiante, `GET /api/academico/estudiante/me/carreras-disponibles` entrega carreras activas configuradas; `GET .../ciclos-disponibles`, `GET .../grados-disponibles` y `GET .../grados/{gradoId}/secciones` entregan los selectores válidos. `POST /api/academico/estudiante/me/inscripciones` recibe `carreraId`, `cicloId`, `gradoId` y `seccionId`; nunca recibe `estudianteId`. `POST /api/academico/estudiante/me/cursos/{cursoId}/asignacion` asigna un curso de esa carrera y período. Ambas operaciones resuelven al estudiante del JWT. Los permisos son `CARRERAS_LEER`, `INSCRIPCIONES_LEER`, `INSCRIPCIONES_CREAR` y `CURSOS_LEER` para las lecturas académicas; la acción de matrícula requiere `INSCRIPCIONES_CREAR` y rol `ESTUDIANTE`. El registro de pago propio requiere `COLEGIATURAS_LEER`, `COLEGIATURAS_REGISTRAR_PAGO` y rol `ESTUDIANTE` en el endpoint de solicitudes de pago.
+
+Aplicar manualmente `src/main/resources/db/migration/V20261001_01__ciclos_inscripcion_y_cuotas.sql` después de respaldar la base. No hay Flyway/Liquibase configurado: `spring.jpa.hibernate.ddl-auto=update` no ejecuta el SQL de migración. Los textos históricos permanecen y se listan en `migracion_inscripciones_sin_relacion`; como los datos anteriores solo tienen año y texto libre, la migración no inventa nombres/fechas ni asocia registros automáticamente. Después cree ciclos, grados y secciones con `/api/academico/catalogos/{ciclos,grados,secciones}` (POST/PUT; lectura protegida por `CARRERAS_LEER` o `INSCRIPCIONES_LEER`) y asocie el ciclo de oferta a los cursos. Estudiantes con inscripciones activas preexistentes conservan su acceso y no reciben cuotas retroactivas; tampoco pueden iniciar una matrícula diferente hasta que un administrador resuelva su estado vigente.
+
+El inicializador `PermissionCatalogInitializer` agrega permisos de lectura y acciones propias al rol cuyo código es `ESTUDIANTE` al arrancar. Para provisionar específicamente el rol existente `id=3`, ejecute `collection/habilitar_permisos_estudiante_rol_3.sql`; el script comprueba `id=3` y `codigo=ESTUDIANTE`, inserta por código natural e informa el resultado. La migración de estructura no asigna permisos. La app móvil guarda los permisos del inicio de sesión en sesión local; cierre sesión e inicie nuevamente después de cambiar permisos para actualizar las acciones visibles.
+
+### Revisión de requisitos del proyecto
+
+El documento `Proyecto Desarrollo Web.docx` no estaba disponible en el workspace ni en la carpeta Documentos revisada. La siguiente revisión usa evidencia del código y de los requisitos compartidos en la solicitud; la correspondencia exacta del texto de RF-027 a RF-043 necesita el documento fuente.
+
+| Requisito | Estado | Evidencia revisada |
+|---|---|---|
+| Configuración del centro educativo | Pendiente | No se localizaron entidades/endpoints de configuración institucional en `src/main/java`. |
+| Inicio de sesión por correo | Implementado | `AuthService` busca por username o email; `UsuarioRepository.findWithRolesAndPermisosByUsernameIgnoreCaseOrEmailIgnoreCase`. |
+| Refresh Token | Pendiente | JWT de acceso con expiración; no existe ruta ni modelo/token de refresco. |
+| Cambio de contraseña | Implementado | `AuthController PUT /api/auth/me/password`, verificación de contraseña actual, política y limitador de intentos. |
+| MapStruct | Pendiente | Los mappers son clases manuales (`CarreraMapper`, `CursoMapper`, etc.); MapStruct no está en `pom.xml`. |
+| Bean Validation | Implementado | `spring-boot-starter-validation`, DTO con restricciones y `@Valid` en controladores. |
+| Package by Feature | Implementado | Paquetes por dominio (`carrera`, `curso`, `inscripcion`, `colegiatura`, `academico`, etc.). |
+| Swagger/OpenAPI | Implementado | Springdoc en `pom.xml`, configuración `OpenApiSecurityConfig`, Swagger UI habilitada. |
+| Postman | Implementado | `collection/SGAU Backend API.postman_collection.json`. |
+| README | Implementado | Este archivo describe arquitectura, contratos, seguridad y migración. |
+| Dockerfile / Docker Compose | Pendiente | No se encontraron esos archivos en ambos proyectos. |
+| Spring Boot 3.x | Diferencia | `pom.xml` fija Spring Boot `4.1.0`; no se cambió automáticamente. |
+
+Trazabilidad de esta entrega: RF-027 ciclo académico; RF-028 catálogo de grados; RF-029 secciones ligadas al grado; RF-030 matrícula a carrera con estudiante/carrera/grado/sección/ciclo; RF-031 selección de período y validación de fechas/estado; RF-032 asignación de curso a carrera/período; RF-033 prevención de duplicados; RF-034 generación transaccional de cuotas; RF-035 snapshot monetario y vencimientos; RF-036 lectura de colegiaturas y pagos propios; RF-037 declaración/revisión de pagos; RF-038 permisos y propiedad desde JWT; RF-039 Android con selectores y acciones; RF-040 migración conservadora de históricos; RF-041 notificaciones; RF-042 documentación de API/actualización; RF-043 pruebas y compilación. Esta numeración es una correspondencia de trabajo derivada de los requisitos suministrados y no una afirmación del texto fuente ausente.
 | Spring Security stateless | Implementado |
 | JWT | Implementado |
 | Swagger / OpenAPI | Implementado |
 | Integracion con Neon PostgreSQL | Preparado por variables de entorno |
 | Despliegue en Google Cloud Run | Preparado por `PORT` y variables de entorno |
+
+### Revisión de pagos (actualización)
+
+Aplicar manualmente y en orden cronológico `src/main/resources/db/migration/V20260929_04__solicitudes_pago.sql`, `src/main/resources/db/migration/V20261001_01__ciclos_inscripcion_y_cuotas.sql` y `src/main/resources/db/migration/V20261001_02__payment_review_and_receipt_uniqueness.sql`. No hay Flyway/Liquibase configurado. La última conserva solicitudes y boletas repetidas históricas, registra ambigüedades en `migracion_boletas_duplicadas`, y solo protege con unicidad los comprobantes nuevos/no ambiguos normalizados por medio + número. También agrega administrador responsable de revisión.
+
+Contrato actualizado: `POST /api/academico/estudiante/me/colegiaturas/{id}/pagos` recibe `monto`, `fechaPago`, `numeroBoleta` (String; admite el alias legado `referencia`), `metodoPago` obligatorio, `comprobanteUrl` opcional y `idempotencyKey`. La clave se conserva al reintentar; el estudiante se obtiene del JWT. Los importes pendientes se reservan contra saldo disponible sin alterar el saldo oficial hasta aprobación. Boleta única: `LOWER(TRIM(metodoPago)) + ':' + LOWER(TRIM(numeroBoleta))`, con índice único en `referencia_unica`.
+
+Revisión: `GET /api/colegiaturas/pagos?estado=PENDIENTE&q=texto&page=0&size=10`, `GET /api/colegiaturas/pagos/{id}`, y `PATCH /api/colegiaturas/pagos/{id}/revision` con `estado=APROBADO|RECHAZADO` y motivo obligatorio para rechazo. Todos verifican en servidor cuenta activa, rol activo `ADMIN` y permiso vigente `COLEGIATURAS_CAMBIAR_ESTADO`; la revisión bloquea la fila del pago y luego la cuota para serializar administradores. `fechaRevision` y `revisadoPorUsuarioId` conservan la auditoría. Android ofrece “Revisión de pagos” desde Colegiaturas y muestra boleta, fecha, importe, carrera, cuota y comprobante enlazado. No se configuró carga binaria de comprobantes, solo URL opcional.
+
+Los scripts `collection/habilitar_permisos_estudiante_rol_3.sql` y `collection/habilitar_revision_pagos_rol_admin.sql` asignan permisos por código natural en transacciones idempotentes; el segundo resuelve el rol por código `ADMIN`. Las migraciones de esquema no otorgan permisos. El `PermissionCatalogInitializer` agrega el catálogo al rol `ADMIN` activo al arrancar, pero el cliente Android requiere cerrar sesión e iniciar de nuevo para refrescar permisos del JWT/sesión.

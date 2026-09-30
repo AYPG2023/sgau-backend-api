@@ -39,6 +39,16 @@ public class AccessScopeService {
         return tieneRol(authentication, "ROLE_ADMIN");
     }
 
+    public boolean esAdminActivoConPermiso(Authentication authentication, String codigoPermiso) {
+        if (authentication == null || !authentication.isAuthenticated()) return false;
+        return usuario(authentication).filter(u -> Boolean.TRUE.equals(u.getActivo()))
+                .map(u -> u.getRoles().stream().anyMatch(r -> Boolean.TRUE.equals(r.getActivo())
+                        && "ADMIN".equalsIgnoreCase(r.getCodigo())
+                        && r.getPermisos().stream().anyMatch(p -> Boolean.TRUE.equals(p.getActivo())
+                                && codigoPermiso.equalsIgnoreCase(p.getCodigo()))))
+                .orElse(false);
+    }
+
     public boolean esEstudiantePropietario(Authentication authentication, Long estudianteId) {
         return esAdmin(authentication) || idEstudiante(authentication).filter(estudianteId::equals).isPresent();
     }

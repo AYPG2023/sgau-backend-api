@@ -86,7 +86,6 @@ class AcademicoSelfServiceTest {
                 .fechaInscripcion(LocalDate.now()).estado("ACTIVA").activo(true).build();
         when(scope.idEstudiante(auth)).thenReturn(Optional.of(8L)); when(estudiantes.findById(8L)).thenReturn(Optional.of(e));
         when(inscripciones.findByEstudiante_IdAndActivoTrueOrderByCicloAnioDescFechaInscripcionDesc(8L)).thenReturn(List.of(i));
-        when(carreras.findById(3L)).thenReturn(Optional.of(carrera));
         when(cursos.findByCarrera_IdAndActivoTrueOrderByCicloAnioDescNombreAsc(3L)).thenReturn(List.of(inscrito,disponible));
         var plan=service.planCarrera(auth);
         assertThat(plan.totalCreditosPlan()).isEqualTo(9);

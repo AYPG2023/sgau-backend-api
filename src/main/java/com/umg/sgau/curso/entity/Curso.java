@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.umg.sgau.carrera.entity.Carrera;
 import com.umg.sgau.docente.entity.Docente;
 import com.umg.sgau.inscripcion.entity.Inscripcion;
+import com.umg.sgau.academico.CicloAcademico;
 import com.umg.sgau.nota.entity.Nota;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -74,6 +75,10 @@ public class Curso {
 
     @Column(name = "ciclo_anio", nullable = false)
     private Integer cicloAnio;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ciclo_id")
+    private CicloAcademico ciclo;
 
     @Column(nullable = false)
     private Boolean activo;

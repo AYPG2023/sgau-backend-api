@@ -22,7 +22,9 @@ public class SolicitudPago {
     @Column(nullable = false, length = 20) private String estado;
     @Column(name = "motivo_rechazo", length = 250) private String motivoRechazo;
     @Column(name = "idempotency_key", nullable = false, length = 80) private String idempotencyKey;
+    @Column(name = "referencia_unica", length = 150, unique = true) private String referenciaUnica;
     @Column(name = "fecha_creacion", nullable = false, updatable = false) private LocalDateTime fechaCreacion;
     @Column(name = "fecha_revision") private LocalDateTime fechaRevision;
+    @Column(name = "revisado_por_usuario_id") private Long revisadoPorUsuarioId;
     @PrePersist void prePersist() { if (estado == null) estado = "PENDIENTE"; if (fechaCreacion == null) fechaCreacion = LocalDateTime.now(); }
 }

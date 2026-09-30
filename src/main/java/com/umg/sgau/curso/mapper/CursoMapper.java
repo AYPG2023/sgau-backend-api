@@ -47,6 +47,7 @@ public final class CursoMapper {
                 .carreraId(curso.getCarrera() != null ? curso.getCarrera().getId() : null)
                 .docenteId(curso.getDocente() != null ? curso.getDocente().getId() : null)
                 .cicloAnio(curso.getCicloAnio())
+                .cicloId(curso.getCiclo() == null ? null : curso.getCiclo().getId())
                 .activo(curso.getActivo())
                 .fechaCreacion(curso.getFechaCreacion())
                 .fechaActualizacion(curso.getFechaActualizacion())

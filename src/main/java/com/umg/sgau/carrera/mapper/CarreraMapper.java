@@ -27,6 +27,7 @@ public final class CarreraMapper {
                 .nombre(dto.getNombre())
                 .descripcion(dto.getDescripcion())
                 .duracionAnios(dto.getDuracionAnios())
+                .mensualidad(dto.getMensualidad()).cantidadCuotas(dto.getCantidadCuotas()).diaVencimiento(dto.getDiaVencimiento())
                 .build();
     }
 
@@ -41,6 +42,7 @@ public final class CarreraMapper {
                 .nombre(carrera.getNombre())
                 .descripcion(carrera.getDescripcion())
                 .duracionAnios(carrera.getDuracionAnios())
+                .mensualidad(carrera.getMensualidad()).cantidadCuotas(carrera.getCantidadCuotas()).diaVencimiento(carrera.getDiaVencimiento())
                 .activo(carrera.getActivo())
                 .fechaCreacion(carrera.getFechaCreacion())
                 .fechaActualizacion(carrera.getFechaActualizacion())
@@ -79,5 +81,6 @@ public final class CarreraMapper {
         carrera.setNombre(dto.getNombre());
         carrera.setDescripcion(dto.getDescripcion());
         carrera.setDuracionAnios(dto.getDuracionAnios());
+        carrera.setMensualidad(dto.getMensualidad()); carrera.setCantidadCuotas(dto.getCantidadCuotas()); carrera.setDiaVencimiento(dto.getDiaVencimiento());
     }
 }

@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 @RestController
 @RequestMapping("/api/carreras")
@@ -48,6 +49,7 @@ public class CarreraController {
     }
 
     @GetMapping
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<Page<CarreraResponseDTO>> listar(
             @RequestParam(required = false) String texto,
             @RequestParam(required = false) Boolean activo,
@@ -59,6 +61,7 @@ public class CarreraController {
     }
 
     @GetMapping("/activas")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<List<CarreraSummaryDTO>> obtenerCarrerasActivas() {
         List<Carrera> carreras = carreraService.obtenerCarrerasActivas();
         List<CarreraSummaryDTO> respuesta = carreras.stream()
@@ -69,11 +72,13 @@ public class CarreraController {
     }
 
     @GetMapping("/nombres-activos")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<List<String>> obtenerNombresDeCarrerasActivas() {
         return ResponseEntity.ok(carreraService.obtenerNombresDeCarrerasActivas());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
     public ResponseEntity<CarreraResponseDTO> obtenerPorId(@PathVariable Long id) {
         return ResponseEntity.ok(
                 CarreraMapper.aResponseDTO(carreraService.obtenerPorId(id)));

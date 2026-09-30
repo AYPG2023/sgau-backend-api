@@ -1,6 +1,8 @@
 package com.umg.sgau.colegiatura.entity;
 
 import com.umg.sgau.estudiante.entity.Estudiante;
+import com.umg.sgau.academico.CicloAcademico;
+import com.umg.sgau.academico.MatriculaCarrera;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,6 +37,17 @@ public class Colegiatura {
 
     @Column(name = "ciclo_anio", nullable = false)
     private Integer cicloAnio;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ciclo_id")
+    private CicloAcademico ciclo;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inscripcion_carrera_id")
+    private MatriculaCarrera inscripcionCarrera;
+
+    @Column(name = "numero_cuota")
+    private Integer numeroCuota;
 
     @Column(nullable = false, length = 120)
     private String concepto;

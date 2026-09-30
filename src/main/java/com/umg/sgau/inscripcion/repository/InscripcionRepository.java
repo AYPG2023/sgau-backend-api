@@ -45,6 +45,11 @@ public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> 
     Page<Inscripcion> findByCurso_IdAndCicloAnioAndActivoTrue(Long cursoId, Integer cicloAnio, Pageable pageable);
     List<Inscripcion> findByEstudiante_IdAndActivoTrueOrderByCicloAnioDescFechaInscripcionDesc(Long estudianteId);
 
+    java.util.Optional<Inscripcion> findFirstByEstudiante_IdAndCursoIsNullAndActivoTrueOrderByCicloAnioDesc(Long estudianteId);
+    boolean existsByEstudiante_IdAndCursoIsNullAndActivoTrue(Long estudianteId);
+    boolean existsByEstudiante_IdAndActivoTrue(Long estudianteId);
+    boolean existsByEstudiante_IdAndCurso_IdAndCiclo_IdAndActivoTrue(Long estudianteId, Long cursoId, Long cicloId);
+
     default Page<Inscripcion> findByCursoIdAndActivoTrue(Long cursoId, Pageable pageable) {
         return findByCurso_IdAndActivoTrue(cursoId, pageable);
     }

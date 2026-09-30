@@ -26,6 +26,7 @@ public class CursoResponseDTO {
     private Long carreraId;
     private Long docenteId;
     private Integer cicloAnio;
+    private Long cicloId;
     private Boolean activo;
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaActualizacion;
