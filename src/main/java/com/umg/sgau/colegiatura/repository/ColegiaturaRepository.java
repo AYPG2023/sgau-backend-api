@@ -5,6 +5,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.repository.query.Param;
 
 import java.math.BigDecimal;
@@ -14,6 +16,10 @@ public interface ColegiaturaRepository
         extends JpaRepository<Colegiatura, Long> {
 
     boolean existsByIdAndEstudiante_Id(Long id, Long estudianteId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from Colegiatura c where c.id = :id")
+    java.util.Optional<Colegiatura> findByIdForUpdate(@Param("id") Long id);
 
     Page<Colegiatura> findByEstudiante_Id(
             Long estudianteId,

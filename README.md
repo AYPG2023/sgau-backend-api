@@ -800,6 +800,23 @@ Los roles son dinamicos. El inicializador reconoce `ADMIN`, `ESTUDIANTE` y `DOCE
 | Otros roles | Sin asignacion automatica | Determinado por sus permisos manuales y por las restricciones de alcance aplicables |
 
 La pertenencia se resuelve en el servidor comparando, sin distinguir mayusculas, `usuario.email` con `estudiante.correo` o `docente.email`. Si no existe esa asociacion, el acceso de alcance se deniega. Para notas, colegiaturas e inscripciones, las rutas por ID consultan la relacion persistida antes de responder; cambiar el ID de la URL no permite acceder a otro estudiante. Los listados globales de estudiantes, cursos, inscripciones, notas y colegiaturas quedan reservados a ADMIN. Un docente debe ser el docente asignado al curso para consultar o modificar sus notas.
+
+### Pagos declarados por estudiantes
+
+Aplicar manualmente `src/main/resources/db/migration/V20260929_02__solicitudes_pago.sql` antes de desplegar. La migracion crea `solicitudes_pago` sin modificar los cargos existentes. Estados: `PENDIENTE` (declarado, sin efecto contable), `APROBADO` (aplicado una vez al saldo) y `RECHAZADO` (sin efecto contable).
+
+* `GET /api/academico/estudiante/me/pagos`: historial propio.
+* `POST /api/academico/estudiante/me/colegiaturas/{id}/pagos`: declara un pago propio. El servidor obtiene el estudiante del JWT y rechaza cargos ajenos.
+* `GET /api/colegiaturas/pagos/pendientes`: bandeja administrativa.
+* `PATCH /api/colegiaturas/pagos/{id}/revision`: aprobacion o rechazo administrativo.
+
+Ejemplo de registro (la clave debe conservarse al reintentar):
+
+```json
+{"monto":250.00,"fechaPago":"2026-09-29","referencia":"TRX-9841","metodoPago":"TRANSFERENCIA","comprobanteUrl":null,"idempotencyKey":"1d6d7bdb-9126-46d9-a18c-d4e9876c75da"}
+```
+
+Respuesta: `{"id":18,"colegiaturaId":4,"monto":250.00,"fechaPago":"2026-09-29","referencia":"TRX-9841","estado":"PENDIENTE"}`. Errores habituales: `400` por monto/fecha/referencia invalidos o monto superior al saldo, `403` si el cargo no es propio y `404` si no existe. Para revisar: `{"estado":"APROBADO"}` o `{"estado":"RECHAZADO","motivo":"Referencia no localizada"}`.
 | Spring Security stateless | Implementado |
 | JWT | Implementado |
 | Swagger / OpenAPI | Implementado |

@@ -151,6 +151,12 @@ public class AcademicoSelfService {
         return notas.findByEstudiante_Id(estudianteActual(auth).getId(), pageable).map(this::nota);
     }
 
+    public Page<AcademicoDTOs.Nota> notasEstudiante(Authentication auth, Integer cicloAnio, Pageable pageable) {
+        Long id = estudianteActual(auth).getId();
+        return (cicloAnio == null ? notas.findByEstudiante_IdAndActivoTrue(id, pageable)
+                : notas.findByEstudiante_IdAndCicloAnioAndActivoTrue(id, cicloAnio, pageable)).map(this::nota);
+    }
+
     public AcademicoDTOs.Promedio promedio(Authentication auth) {
         Estudiante e = estudianteActual(auth);
         List<Nota> activas = notas.findByEstudiante_IdAndActivoTrue(e.getId());

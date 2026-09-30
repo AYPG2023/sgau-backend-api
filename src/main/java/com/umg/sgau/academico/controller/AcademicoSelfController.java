@@ -72,7 +72,7 @@ public class AcademicoSelfController {
 
     @GetMapping("/estudiante/me/notas")
     @PreAuthorize("hasAuthority('NOTAS_LEER')")
-    public Page<AcademicoDTOs.Nota> notas(Authentication auth, Pageable pageable) { return service.notasEstudiante(auth, pageable); }
+    public Page<AcademicoDTOs.Nota> notas(Authentication auth, @RequestParam(required=false) Integer cicloAnio, Pageable pageable) { return service.notasEstudiante(auth, cicloAnio, pageable); }
 
     @GetMapping("/estudiante/me/promedio")
     @PreAuthorize("hasAuthority('NOTAS_LEER')")

@@ -81,6 +81,7 @@ public interface NotaRepository extends JpaRepository<Nota, Long> {
 
     List<Nota> findByEstudiante_IdAndCicloAnioAndActivoTrue(
             Long estudianteId, Integer cicloAnio);
+    Page<Nota> findByEstudiante_IdAndCicloAnioAndActivoTrue(Long estudianteId, Integer cicloAnio, Pageable pageable);
 
     default List<Nota> findByEstudianteIdAndCicloAnioAndActivoTrue(Long estudianteId, Integer cicloAnio) {
         return findByEstudiante_IdAndCicloAnioAndActivoTrue(estudianteId, cicloAnio);
