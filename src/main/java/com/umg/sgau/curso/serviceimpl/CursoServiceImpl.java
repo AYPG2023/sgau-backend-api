@@ -25,9 +25,14 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.annotation.Transactional;
+import com.umg.sgau.notificacion.service.EventoNotificacion;
 
 @Service
 public class CursoServiceImpl implements CursoService {
+    @Autowired private ApplicationEventPublisher events;
 
     private final CursoRepository cursoRepository;
     private final CarreraService carreraService;
@@ -127,6 +132,7 @@ public class CursoServiceImpl implements CursoService {
     }
 
     @Override
+    @Transactional
     public Curso asignarDocente(Long id, Long docenteId) {
         Curso curso = obtenerPorId(id);
 
@@ -136,7 +142,9 @@ public class CursoServiceImpl implements CursoService {
 
         curso.setDocente(docente);
 
-        return cursoRepository.save(curso);
+        Curso guardado=cursoRepository.save(curso);
+        if(events!=null&&docente.getUsuario()!=null)events.publishEvent(new EventoNotificacion(docente.getUsuario().getId(),"ASIGNACION_CURSO:"+id+":"+System.nanoTime(),"CURSO","Curso asignado","Se actualizó tu asignación docente.","CURSO",id,false));
+        return guardado;
     }
 
     @Override

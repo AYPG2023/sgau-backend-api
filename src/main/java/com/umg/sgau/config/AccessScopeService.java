@@ -102,6 +102,10 @@ public class AccessScopeService {
                 .map(e -> e.getId());
     }
 
+    public Optional<Long> idUsuario(Authentication authentication) {
+        return usuario(authentication).map(com.umg.sgau.usuario.entity.Usuario::getId);
+    }
+
     public Optional<Long> idDocente(Authentication authentication) {
         return usuario(authentication).flatMap(u -> docenteRepository.findByUsuarioId(u.getId()))
                 .map(d -> d.getId());

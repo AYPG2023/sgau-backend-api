@@ -43,6 +43,7 @@ src/main/java/com/umg/sgau/
 |-- rol/
 |-- permiso/
 |-- historialacademico/
+|-- notificacion/
 `-- estadogeneral/
 ```
 
@@ -112,6 +113,30 @@ ResponseEntity / JSON
 ```
 
 El Controller no accede directamente al Repository. La validacion de reglas de negocio, entidades relacionadas, duplicados y Soft Delete se mantiene en la capa ServiceImpl.
+
+## Notificaciones y push (FCM)
+
+Las notificaciones de buzón se escriben en `notificaciones` dentro de la misma transacción que confirma el evento académico/financiero (outbox transaccional). Un proceso programado intenta FCM en segundo plano hasta cinco veces con espera incremental; el error de Firebase no revierte la operación original. `event_key` es único por usuario. Borrar/vaciar elimina también cualquier entrega aún pendiente. Un mensaje FCM contiene solamente identificadores de destino; el Android consulta el buzón con la sesión vigente antes de navegar. El texto de la notificación visible es genérico para no divulgar notas ni pagos.
+
+Configura `FIREBASE_PROJECT_ID` y `GOOGLE_APPLICATION_CREDENTIALS` en el entorno del servidor (el segundo apunta a una credencial de cuenta de servicio montada como secreto; nunca se debe guardar en el repositorio). Sin configuración/credencial de Admin, el buzón sigue funcionando, pero no se envía push. En Android se requiere `app/google-services.json` correspondiente al proyecto Firebase y permiso de notificaciones en Android 13 o posterior.
+
+Todos los endpoints siguientes requieren `Authorization: Bearer <JWT>`. El usuario se resuelve desde el JWT y no se acepta un `usuarioId` del cliente:
+
+| Método y ruta | Uso |
+|---|---|
+| `GET /api/notificaciones/me?page=0&size=20` | Buzón paginado (máximo 100 por página). |
+| `GET /api/notificaciones/me/count` | `{ "noLeidas": 2 }`. |
+| `GET /api/notificaciones/me/{id}` | Consultar detalle propio; `404` si no existe/no pertenece. |
+| `PATCH /api/notificaciones/me/{id}/leida` | Marcar una propia como leída. |
+| `PATCH /api/notificaciones/me/leidas` | Marcar todas las propias; `{ "actualizadas": 2 }`. |
+| `DELETE /api/notificaciones/me/{id}` | Eliminar una propia; `204` al éxito. |
+| `DELETE /api/notificaciones/me` | Vaciar solo el buzón propio; `{ "eliminadas": 2 }`. |
+| `POST /api/notificaciones/me/dispositivos` | Registrar/rotar token: `{ "token": "<FCM>" }`; respuesta `204`. |
+| `DELETE /api/notificaciones/me/dispositivos?token=<FCM>` | Desvincular el dispositivo de la cuenta autenticada. |
+
+Ejemplo de elemento de buzón: `{ "id": 45, "tipo": "PAGO_PENDIENTE", "titulo": "Pago registrado", "mensaje": "Tu pago quedó pendiente de revisión.", "destinoTipo": "COLEGIATURA", "destinoId": 12, "fechaCreacion": "2026-09-29T10:30:00", "leida": false }`. Los errores de validación de token usan el manejador estándar de Bean Validation (`400`); una notificación ajena o no disponible da `404`, sin revelar su existencia.
+
+Los eventos conectados son inscripción confirmada, nota creada/modificada, asignación docente, colegiatura generada y pago declarado pendiente / aprobado / rechazado. Los pagos pendientes se distinguen de pagos confirmados; solo administradores activos con permiso de registro de pagos reciben avisos de revisión. Los resultados de envío se registran como `PENDIENTE`, `SIN_DISPOSITIVO`, `ERROR` o `ENVIADO`; los tokens que FCM identifica como no registrados se eliminan.
 
 ## Relaciones entre entidades
 

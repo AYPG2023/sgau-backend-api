@@ -27,9 +27,14 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Transactional;
+import com.umg.sgau.notificacion.service.EventoNotificacion;
 
 @Service
 public class NotaServiceImpl implements NotaService {
+    @Autowired private ApplicationEventPublisher events;
 
     private final NotaRepository notaRepository;
     private final EstudianteService estudianteService;
@@ -48,6 +53,7 @@ public class NotaServiceImpl implements NotaService {
     }
 
     @Override
+    @Transactional
     public Nota crear(Nota nota, Long estudianteId, Long cursoId) {
         validarDatosEditables(nota);
         nota.setTipoEvaluacion(normalizarTipoEvaluacion(nota.getTipoEvaluacion()));
@@ -57,7 +63,7 @@ public class NotaServiceImpl implements NotaService {
         validarDuplicadoActivo(nota, null);
         nota.setActivo(true);
 
-        return notaRepository.save(nota);
+        Nota guardada=notaRepository.save(nota); publicar(guardada,"publicada"); return guardada;
     }
 
     @Override
@@ -79,6 +85,7 @@ public class NotaServiceImpl implements NotaService {
     }
 
     @Override
+    @Transactional
     public Nota actualizar(Long id, Nota nota) {
 
         Nota existente = obtenerPorId(id);
@@ -92,8 +99,10 @@ public class NotaServiceImpl implements NotaService {
         validarInscripcionActiva(existente);
         validarDuplicadoActivo(existente, id);
 
-        return notaRepository.save(existente);
+        Nota guardada=notaRepository.save(existente); publicar(guardada,"modificada"); return guardada;
     }
+
+    private void publicar(Nota n,String accion){if(events!=null&&n.getEstudiante().getUsuario()!=null)events.publishEvent(new EventoNotificacion(n.getEstudiante().getUsuario().getId(),"NOTA:"+n.getId()+":"+n.getFechaActualizacion()+":"+accion,"NOTA","Nota actualizada","Se publicó o modificó una calificación.","NOTA",n.getId(),false));}
 
     @Override
     public Nota cambiarEstado(Long id, Boolean activo) {

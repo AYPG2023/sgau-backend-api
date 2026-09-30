@@ -24,11 +24,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.umg.sgau.notificacion.service.EventoNotificacion;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class ColegiaturaServiceImpl implements ColegiaturaService {
+    @Autowired private ApplicationEventPublisher events;
 
     private static final BigDecimal CERO = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
     private static final String ESTADO_PENDIENTE = "PENDIENTE";
@@ -58,7 +62,9 @@ public class ColegiaturaServiceImpl implements ColegiaturaService {
         colegiatura.setEstado(ESTADO_PENDIENTE);
         colegiatura.setActivo(true);
 
-        return colegiaturaRepository.save(colegiatura);
+        Colegiatura creada=colegiaturaRepository.save(colegiatura);
+        if(events!=null&&estudiante.getUsuario()!=null)events.publishEvent(new EventoNotificacion(estudiante.getUsuario().getId(),"COLEGIATURA:"+creada.getId()+":"+System.nanoTime(),"COLEGIATURA","Nueva colegiatura","Se generó una colegiatura en tu cuenta.","COLEGIATURA",creada.getId(),false));
+        return creada;
     }
 
     @Override

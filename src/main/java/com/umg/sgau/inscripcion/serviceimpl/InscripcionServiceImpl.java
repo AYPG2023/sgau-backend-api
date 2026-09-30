@@ -26,6 +26,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.umg.sgau.notificacion.service.EventoNotificacion;
+import java.time.LocalDateTime;
 
 @Service
 @Transactional
@@ -35,6 +39,7 @@ public class InscripcionServiceImpl implements InscripcionService {
     private final EstudianteService estudianteService;
     private final CarreraService carreraService;
     private final CursoService cursoService;
+    @Autowired private ApplicationEventPublisher events;
 
     @Autowired
     public InscripcionServiceImpl(
@@ -62,7 +67,12 @@ public class InscripcionServiceImpl implements InscripcionService {
         validarDuplicadoActivo(inscripcion, null);
 
         // El @PrePersist pone estado=ACTIVA y activo=true.
-        return inscripcionRepository.save(inscripcion);
+        Inscripcion guardada = inscripcionRepository.save(inscripcion);
+        var student = guardada.getEstudiante(); var course = guardada.getCurso();
+        if (events != null && student.getUsuario() != null) events.publishEvent(new EventoNotificacion(student.getUsuario().getId(),
+                "INSCRIPCION:"+guardada.getId()+":"+LocalDateTime.now(), "INSCRIPCION", "Curso asignado",
+                "Se confirmó tu inscripción a un curso.", "CURSO", course == null ? null : course.getId(), false));
+        return guardada;
     }
 
     @Override

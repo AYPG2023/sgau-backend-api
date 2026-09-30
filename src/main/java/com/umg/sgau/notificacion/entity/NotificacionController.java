@@ -1,0 +1,13 @@
+package com.umg.sgau.notificacion.controller;
+import com.umg.sgau.config.AccessScopeService; import com.umg.sgau.notificacion.entity.Notificacion; import com.umg.sgau.notificacion.service.NotificacionService; import jakarta.validation.constraints.*; import java.time.LocalDateTime; import java.util.*; import org.springframework.data.domain.*; import org.springframework.http.*; import org.springframework.security.core.Authentication; import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/notificaciones/me") public class NotificacionController {
+ private final NotificacionService service; private final AccessScopeService scope; public NotificacionController(NotificacionService s,AccessScopeService a){service=s;scope=a;}
+ private Long uid(Authentication a){return scope.idUsuario(a).orElseThrow(()->new org.springframework.security.access.AccessDeniedException("Usuario no autenticado."));}
+ public record Item(Long id,String tipo,String titulo,String mensaje,String destinoTipo,Long destinoId,LocalDateTime fechaCreacion,boolean leida){} public record Device(@NotBlank @Size(max=500)String token){}
+ private Item dto(Notificacion n){return new Item(n.getId(),n.getTipo(),n.getTitulo(),n.getMensaje(),n.getDestinoTipo(),n.getDestinoId(),n.getFechaCreacion(),n.isLeida());}
+ @GetMapping public Page<Item> list(Authentication a,@RequestParam(defaultValue="0")int page,@RequestParam(defaultValue="20")int size){return service.list(uid(a),PageRequest.of(Math.max(0,page),Math.min(100,Math.max(1,size)))).map(this::dto);}
+ @GetMapping("/count") public Map<String,Long> count(Authentication a){return Map.of("noLeidas",service.unread(uid(a)));} @GetMapping("/{id}") public Item get(Authentication a,@PathVariable Long id){return dto(service.get(uid(a),id));}
+ @PatchMapping("/{id}/leida") public Item read(Authentication a,@PathVariable Long id){return dto(service.read(uid(a),id));} @PatchMapping("/leidas") public Map<String,Integer> readAll(Authentication a){return Map.of("actualizadas",service.readAll(uid(a)));}
+ @DeleteMapping("/{id}") public ResponseEntity<Void> delete(Authentication a,@PathVariable Long id){service.delete(uid(a),id);return ResponseEntity.noContent().build();} @DeleteMapping public Map<String,Integer> clear(Authentication a){return Map.of("eliminadas",service.clear(uid(a)));}
+ @PostMapping("/dispositivos") public ResponseEntity<Void> register(Authentication a,@jakarta.validation.Valid @RequestBody Device d){service.registerDevice(uid(a),d.token().trim());return ResponseEntity.noContent().build();} @DeleteMapping("/dispositivos") public ResponseEntity<Void> remove(Authentication a,@RequestParam String token){service.removeDevice(uid(a),token);return ResponseEntity.noContent().build();}
+}

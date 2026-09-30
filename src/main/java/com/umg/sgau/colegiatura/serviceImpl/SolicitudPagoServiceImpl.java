@@ -15,9 +15,13 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.annotation.Autowired;
+import com.umg.sgau.notificacion.service.EventoNotificacion;
 
 @Service @RequiredArgsConstructor @Transactional
 public class SolicitudPagoServiceImpl implements SolicitudPagoService {
+    @Autowired private ApplicationEventPublisher events;
     private final AccessScopeService accessScope;
     private final EstudianteRepository estudiantes;
     private final ColegiaturaRepository colegiaturas;
@@ -39,7 +43,9 @@ public class SolicitudPagoServiceImpl implements SolicitudPagoService {
                             .monto(monto).fechaPago(r.fechaPago()).referencia(r.referencia().trim())
                             .metodoPago(limpiar(r.metodoPago())).comprobanteUrl(limpiar(r.comprobanteUrl()))
                             .idempotencyKey(r.idempotencyKey().trim()).estado("PENDIENTE").build();
-                    return dto(solicitudes.save(s));
+                    SolicitudPago saved=solicitudes.save(s);
+                    if(events!=null){if(saved.getEstudiante().getUsuario()!=null)events.publishEvent(new EventoNotificacion(saved.getEstudiante().getUsuario().getId(),"PAGO_PENDIENTE:"+saved.getId(),"PAGO_PENDIENTE","Pago registrado, pendiente de revisión","Tu pago fue registrado y está pendiente de revisión administrativa.","COLEGIATURA",colegiaturaId,true));}
+                    return dto(saved);
                 });
     }
 
@@ -56,6 +62,7 @@ public class SolicitudPagoServiceImpl implements SolicitudPagoService {
         if ("RECHAZADO".equals(r.estado())) {
             if (r.motivo() == null || r.motivo().isBlank()) throw new PagoColegiaturaInvalidoException("Debe indicar el motivo del rechazo.");
             s.setEstado("RECHAZADO"); s.setMotivoRechazo(r.motivo().trim()); s.setFechaRevision(LocalDateTime.now());
+            if(events!=null&&s.getEstudiante().getUsuario()!=null)events.publishEvent(new EventoNotificacion(s.getEstudiante().getUsuario().getId(),"PAGO_RECHAZADO:"+s.getId(),"PAGO_RECHAZADO","Pago rechazado","Tu pago fue rechazado. Consulta el buzón para ver el motivo.","COLEGIATURA",s.getColegiatura().getId(),false));
             return dto(solicitudes.save(s));
         }
         Colegiatura c = colegiaturas.findByIdForUpdate(s.getColegiatura().getId()).orElseThrow(() -> new ColegiaturaNoEncontradaException(s.getColegiatura().getId()));
@@ -64,6 +71,7 @@ public class SolicitudPagoServiceImpl implements SolicitudPagoService {
         c.setSaldoPendiente(c.getSaldoPendiente().subtract(s.getMonto()).setScale(2, RoundingMode.HALF_UP));
         c.setEstado(c.getSaldoPendiente().signum() == 0 ? "PAGADA" : "PARCIAL");
         colegiaturas.save(c); s.setEstado("APROBADO"); s.setFechaRevision(LocalDateTime.now());
+        if(events!=null&&s.getEstudiante().getUsuario()!=null)events.publishEvent(new EventoNotificacion(s.getEstudiante().getUsuario().getId(),"PAGO_APROBADO:"+s.getId(),"PAGO_APROBADO","Pago confirmado","Tu pago fue aprobado y aplicado a tu colegiatura.","COLEGIATURA",c.getId(),false));
         return dto(solicitudes.save(s));
     }
     private SolicitudPagoDTOs.Respuesta dto(SolicitudPago s) { return new SolicitudPagoDTOs.Respuesta(s.getId(), s.getColegiatura().getId(), s.getMonto(), s.getFechaPago(), s.getReferencia(), s.getMetodoPago(), s.getComprobanteUrl(), s.getEstado(), s.getMotivoRechazo(), s.getFechaCreacion(), s.getFechaRevision()); }
