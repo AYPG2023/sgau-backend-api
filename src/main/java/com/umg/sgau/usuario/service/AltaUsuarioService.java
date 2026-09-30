@@ -93,7 +93,10 @@ public class AltaUsuarioService {
     }
 
     private List<Rol> cargarYValidarRoles(Set<Long> ids, Map<String, String> errores) {
-        if (ids == null || ids.isEmpty()) return List.of();
+        if (ids == null || ids.isEmpty()) {
+            errores.put("rolIds", "Debe seleccionar al menos un rol");
+            return List.of();
+        }
         if (ids.stream().anyMatch(Objects::isNull)) {
             errores.put("rolIds", "Los IDs de roles no pueden ser nulos");
             return List.of();

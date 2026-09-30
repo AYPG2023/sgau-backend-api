@@ -3,6 +3,7 @@ package com.umg.sgau.usuario.serviceimpl;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
 
 import com.umg.sgau.permiso.entity.Permiso;
 import com.umg.sgau.rol.entity.Rol;
@@ -74,6 +75,33 @@ class UsuarioServiceImplRolesTest {
         Set<String> autoridades = usuarioService.obtenerAutoridades("admin");
 
         assertThat(autoridades).containsExactlyInAnyOrder("ROLE_ADMIN", "USUARIO_CREAR");
+    }
+
+    @Test
+    void actualizarDatosAjenosConservaTodosLosRolesExistentes() {
+        Usuario existente = usuario(true);
+        existente.setUsername("anterior");
+        existente.setEmail("anterior@sgau.test");
+        existente.setNombre("Nombre");
+        existente.setApellido("Anterior");
+        existente.setPassword("$2a$hash");
+        existente.setRoles(new HashSet<>(Set.of(rol("ADMIN", true), rol("DOCENTE", true))));
+        Usuario cambios = usuario(true);
+        cambios.setUsername("nuevo");
+        cambios.setEmail("nuevo@sgau.test");
+        cambios.setNombre("Nombre nuevo");
+        cambios.setApellido("Apellido nuevo");
+        cambios.setPassword(null);
+        when(usuarioRepository.findWithRolesById(1L)).thenReturn(Optional.of(existente));
+        when(usuarioRepository.findByUsername("nuevo")).thenReturn(Optional.empty());
+        when(usuarioRepository.findByEmail("nuevo@sgau.test")).thenReturn(Optional.empty());
+        when(usuarioRepository.save(existente)).thenReturn(existente);
+
+        Usuario actualizado = usuarioService.actualizar(1L, cambios);
+
+        assertThat(actualizado.getRoles()).extracting(Rol::getCodigo)
+                .containsExactlyInAnyOrder("ADMIN", "DOCENTE");
+        verify(usuarioRepository).save(existente);
     }
 
     private Usuario usuario(Boolean activo) {
