@@ -1,5 +1,6 @@
 package com.umg.sgau.config;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -82,6 +83,57 @@ class PermissionAuthorizationIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.permisos", hasSize(1)))
                 .andExpect(jsonPath("$.permisos", hasItem(PermissionCatalog.USUARIOS_LEER)));
+    }
+
+    @Test
+    void altaConjuntaExigeCrearUsuarioYAsignarRoles() throws Exception {
+        Permiso crear = permisoRepository.findByCodigoIgnoreCase(PermissionCatalog.USUARIOS_CREAR).orElseThrow();
+        Permiso asignar = permisoRepository.findByCodigoIgnoreCase(PermissionCatalog.USUARIOS_ASIGNAR_ROLES).orElseThrow();
+        Rol destino = guardarRol("DESTINO_ALTA_SEGURA", Set.of());
+        guardarUsuario("solo_crea", Set.of(guardarRol("SOLO_CREA", Set.of(crear))));
+        guardarUsuario("crea_y_asigna", Set.of(guardarRol("CREA_Y_ASIGNA", Set.of(crear, asignar))));
+
+        String body = """
+                {"username":"alta_segura","password":"Usuario123*","nombre":"Alta",
+                 "apellido":"Segura","correo":"alta.segura@sgau.test","rolIds":[%d]}
+                """.formatted(destino.getId());
+
+        String tokenSoloCrea = token(login("solo_crea").andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+        mockMvc.perform(post("/api/usuarios/alta-conjunta")
+                        .header("Authorization", "Bearer " + tokenSoloCrea)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isForbidden());
+        assertThat(usuarioRepository.findByUsername("alta_segura")).isEmpty();
+
+        String tokenCompleto = token(login("crea_y_asigna").andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString());
+        mockMvc.perform(post("/api/usuarios/alta-conjunta")
+                        .header("Authorization", "Bearer " + tokenCompleto)
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.roles", hasSize(1)))
+                .andExpect(jsonPath("$.roles[0].id").value(destino.getId()));
+    }
+
+    @Test
+    void inicializadorNoSobrescribePermisosAdministradosDeEstudiante() throws Exception {
+        Permiso permisoElegido = permisoRepository.findByCodigoIgnoreCase(PermissionCatalog.NOTAS_LEER).orElseThrow();
+        Rol estudiante = rolRepository.findByCodigoIgnoreCase("ESTUDIANTE").orElseGet(() -> {
+            Rol nuevo = new Rol();
+            nuevo.setCodigo("ESTUDIANTE");
+            nuevo.setNombre("Estudiante");
+            nuevo.setActivo(true);
+            return rolRepository.save(nuevo);
+        });
+        estudiante.setPermisos(new HashSet<>(Set.of(permisoElegido)));
+        rolRepository.saveAndFlush(estudiante);
+
+        initializer.run(null);
+
+        Rol recargado = rolRepository.findWithPermisosById(estudiante.getId()).orElseThrow();
+        assertThat(recargado.getPermisos()).extracting(Permiso::getCodigo)
+                .containsExactly(PermissionCatalog.NOTAS_LEER);
     }
 
     private org.springframework.test.web.servlet.ResultActions login(String username) throws Exception {

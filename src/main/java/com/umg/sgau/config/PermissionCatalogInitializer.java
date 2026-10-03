@@ -39,11 +39,13 @@ public class PermissionCatalogInitializer implements ApplicationRunner {
         rolRepository.findByCodigoIgnoreCase("ADMIN").ifPresent(admin -> asignarAlAdministrador(admin, permisosAdmin));
         asignarMatrizInicial("ESTUDIANTE", permisosAdmin, Set.of(
                 PermissionCatalog.ESTUDIANTES_LEER,
+                PermissionCatalog.CARRERAS_LEER,
                 PermissionCatalog.CURSOS_LEER,
                 PermissionCatalog.INSCRIPCIONES_LEER,
+                PermissionCatalog.INSCRIPCIONES_CREAR,
                 PermissionCatalog.NOTAS_LEER,
-                PermissionCatalog.COLEGIATURAS_LEER));
-        asignarPermisosInscripcionPropia(permisosAdmin);
+                PermissionCatalog.COLEGIATURAS_LEER,
+                PermissionCatalog.COLEGIATURAS_REGISTRAR_PAGO));
         asignarMatrizInicial("DOCENTE", permisosAdmin, Set.of(
                 PermissionCatalog.CURSOS_LEER,
                 PermissionCatalog.INSCRIPCIONES_LEER,
@@ -51,18 +53,6 @@ public class PermissionCatalogInitializer implements ApplicationRunner {
                 PermissionCatalog.NOTAS_CREAR,
                 PermissionCatalog.NOTAS_EDITAR,
                 PermissionCatalog.NOTAS_CAMBIAR_ESTADO));
-    }
-
-    private void asignarPermisosInscripcionPropia(Set<Permiso> catalogo) {
-        rolRepository.findByCodigoIgnoreCase("ESTUDIANTE").ifPresent(rol -> {
-            var porCodigo = catalogo.stream().collect(java.util.stream.Collectors.toMap(Permiso::getCodigo, p -> p));
-            Set<String> necesarios = Set.of(PermissionCatalog.CARRERAS_LEER, PermissionCatalog.CURSOS_LEER,
-                    PermissionCatalog.INSCRIPCIONES_LEER, PermissionCatalog.INSCRIPCIONES_CREAR,
-                    PermissionCatalog.COLEGIATURAS_LEER, PermissionCatalog.COLEGIATURAS_REGISTRAR_PAGO);
-            if (rol.getPermisos() == null) rol.setPermisos(new HashSet<>());
-            necesarios.forEach(code -> { if (porCodigo.get(code) != null) rol.getPermisos().add(porCodigo.get(code)); });
-            rolRepository.save(rol);
-        });
     }
 
     private void asignarAlAdministrador(Rol admin, HashSet<Permiso> permisos) {

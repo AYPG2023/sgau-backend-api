@@ -3,6 +3,9 @@ package com.umg.sgau.usuario.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import com.umg.sgau.auth.dto.LoginRequestDTO;
+import com.umg.sgau.auth.dto.LoginResponseDTO;
+import com.umg.sgau.auth.service.AuthService;
 import com.umg.sgau.docente.repository.DocenteRepository;
 import com.umg.sgau.estudiante.repository.EstudianteRepository;
 import com.umg.sgau.rol.entity.Rol;
@@ -29,6 +32,7 @@ class AltaUsuarioServiceIntegrationTest {
     @Autowired RolRepository roles;
     @Autowired DocenteRepository docentes;
     @Autowired EstudianteRepository estudiantes;
+    @Autowired AuthService auth;
 
     private Rol docenteRol;
     private Rol estudianteRol;
@@ -45,6 +49,10 @@ class AltaUsuarioServiceIntegrationTest {
     void creaSoloCuentaCuandoNoHayRolAcademico() {
         var resultado = altas.crear(base("solo_cuenta", "solo.cuenta@sgau.test", Set.of(adminRol.getId())));
         assertThat(resultado.getUsuarioId()).isNotNull();
+        assertThat(resultado.getRoles()).extracting("id").containsExactly(adminRol.getId());
+        assertThat(usuarios.findWithRolesById(resultado.getUsuarioId()).orElseThrow().getRoles())
+                .extracting(Rol::getId).containsExactly(adminRol.getId());
+        assertThat(login("solo_cuenta").getRoles()).containsExactly("ADMIN_TEST_ALTA");
         assertThat(resultado.getDocenteId()).isNull();
         assertThat(resultado.getEstudianteId()).isNull();
     }
@@ -57,6 +65,9 @@ class AltaUsuarioServiceIntegrationTest {
         assertThat(resultado.getDocenteId()).isNotNull();
         assertThat(docentes.findById(resultado.getDocenteId()).orElseThrow().getUsuario().getId())
                 .isEqualTo(resultado.getUsuarioId());
+        assertThat(usuarios.findWithRolesById(resultado.getUsuarioId()).orElseThrow().getRoles())
+                .extracting(Rol::getCodigo).containsExactly("DOCENTE");
+        assertThat(login("alta_docente").getRoles()).containsExactly("DOCENTE");
     }
 
     @Test
@@ -67,6 +78,9 @@ class AltaUsuarioServiceIntegrationTest {
         assertThat(resultado.getEstudianteId()).isNotNull();
         assertThat(estudiantes.findById(resultado.getEstudianteId()).orElseThrow().getUsuario().getId())
                 .isEqualTo(resultado.getUsuarioId());
+        assertThat(usuarios.findWithRolesById(resultado.getUsuarioId()).orElseThrow().getRoles())
+                .extracting(Rol::getCodigo).containsExactly("ESTUDIANTE");
+        assertThat(login("alta_estudiante").getRoles()).containsExactly("ESTUDIANTE");
     }
 
     @Test
@@ -110,6 +124,43 @@ class AltaUsuarioServiceIntegrationTest {
         assertThat(usuarios.findByUsername("est_fallido")).isEmpty();
     }
 
+    @Test
+    void rolInexistenteNoDejaUsuarioParcial() {
+        long usuariosAntes = usuarios.count();
+        AltaUsuarioRequestDTO request = base("rol_inexistente", "rol.inexistente@sgau.test",
+                Set.of(Long.MAX_VALUE));
+
+        assertThatThrownBy(() -> altas.crear(request)).isInstanceOf(AltaUsuarioValidationException.class);
+
+        assertThat(usuarios.count()).isEqualTo(usuariosAntes);
+        assertThat(usuarios.findByUsername("rol_inexistente")).isEmpty();
+    }
+
+    @Test
+    void rolInactivoNoDejaUsuarioParcial() {
+        Rol inactivo = rol("INACTIVO_TEST_ALTA");
+        inactivo.setActivo(false);
+        roles.save(inactivo);
+        long usuariosAntes = usuarios.count();
+        AltaUsuarioRequestDTO request = base("rol_inactivo", "rol.inactivo@sgau.test", Set.of(inactivo.getId()));
+
+        assertThatThrownBy(() -> altas.crear(request)).isInstanceOf(AltaUsuarioValidationException.class);
+
+        assertThat(usuarios.count()).isEqualTo(usuariosAntes);
+        assertThat(usuarios.findByUsername("rol_inactivo")).isEmpty();
+    }
+
+    @Test
+    void listaVaciaNoDejaUsuarioParcial() {
+        long usuariosAntes = usuarios.count();
+        AltaUsuarioRequestDTO request = base("sin_rol", "sin.rol@sgau.test", Set.of());
+
+        assertThatThrownBy(() -> altas.crear(request)).isInstanceOf(AltaUsuarioValidationException.class);
+
+        assertThat(usuarios.count()).isEqualTo(usuariosAntes);
+        assertThat(usuarios.findByUsername("sin_rol")).isEmpty();
+    }
+
     private Rol rol(String codigo) {
         return roles.findByCodigoIgnoreCase(codigo).orElseGet(() -> roles.save(Rol.builder()
                 .codigo(codigo).nombre("Rol " + codigo).activo(true).permisos(new HashSet<>()).build()));
@@ -131,5 +182,12 @@ class AltaUsuarioServiceIntegrationTest {
         AltaUsuarioEstudianteDTO dto = new AltaUsuarioEstudianteDTO();
         dto.setCodigoEstudiantil(codigo); dto.setNumeroIdentificacion(identificacion);
         dto.setFechaNacimiento(LocalDate.of(2000, 1, 1)); return dto;
+    }
+
+    private LoginResponseDTO login(String username) {
+        LoginRequestDTO request = new LoginRequestDTO();
+        request.setUsername(username);
+        request.setPassword("Password123*");
+        return auth.login(request);
     }
 }
