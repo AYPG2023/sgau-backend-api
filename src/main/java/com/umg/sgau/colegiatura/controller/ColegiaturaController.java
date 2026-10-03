@@ -1,6 +1,7 @@
 package com.umg.sgau.colegiatura.controller;
 
 import com.umg.sgau.academico.MatriculaCarreraRepository;
+import com.umg.sgau.inscripcion.repository.InscripcionRepository;
 import com.umg.sgau.colegiatura.dto.ColegiaturaCreateRequestDTO;
 import com.umg.sgau.colegiatura.dto.ColegiaturaPagoRequestDTO;
 import com.umg.sgau.colegiatura.dto.ColegiaturaResponseDTO;
@@ -37,10 +38,13 @@ public class ColegiaturaController {
 
     private final ColegiaturaService colegiaturaService;
     private final MatriculaCarreraRepository matriculas;
+    private final InscripcionRepository inscripciones;
 
-    public ColegiaturaController(ColegiaturaService colegiaturaService, MatriculaCarreraRepository matriculas) {
+    public ColegiaturaController(ColegiaturaService colegiaturaService, MatriculaCarreraRepository matriculas,
+            InscripcionRepository inscripciones) {
         this.colegiaturaService = colegiaturaService;
         this.matriculas = matriculas;
+        this.inscripciones = inscripciones;
     }
 
     public record ConfiguracionEstudianteDTO(Long carreraId, String carreraNombre, BigDecimal mensualidad,
@@ -50,15 +54,29 @@ public class ColegiaturaController {
     @PreAuthorize("@accessScope.esAdmin(authentication)")
     @Transactional(readOnly = true)
     public ConfiguracionEstudianteDTO configuracionEstudiante(@PathVariable Long estudianteId) {
-        var matricula = matriculas.findFirstByEstudiante_IdAndActivoTrueOrderByFechaInscripcionDesc(estudianteId)
-                .orElseThrow(() -> new IllegalArgumentException("El estudiante no tiene una carrera y ciclo activos."));
-        var carrera = matricula.getCarrera();
-        var ciclo = matricula.getCiclo();
+        var matricula = matriculas.findFirstByEstudiante_IdAndActivoTrueOrderByFechaInscripcionDesc(estudianteId);
+        var carrera = matricula.map(m -> m.getCarrera()).orElse(null);
+        var ciclo = matricula.map(m -> m.getCiclo()).orElse(null);
+        Integer cicloAnio = ciclo == null ? null : ciclo.getAnio();
+
+        if (carrera == null) {
+            var inscripcion = inscripciones
+                    .findByEstudiante_IdAndActivoTrueOrderByCicloAnioDescFechaInscripcionDesc(estudianteId)
+                    .stream()
+                    .filter(i -> i.getCurso() != null && i.getCarrera() != null)
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException(
+                            "El estudiante no tiene una carrera o inscripción activa."));
+            carrera = inscripcion.getCarrera();
+            ciclo = inscripcion.getCiclo() != null ? inscripcion.getCiclo() : inscripcion.getCurso().getCiclo();
+            cicloAnio = ciclo == null ? inscripcion.getCicloAnio() : ciclo.getAnio();
+        }
         if (carrera.getMensualidad() == null || carrera.getMensualidad().signum() <= 0) {
             throw new IllegalArgumentException("La carrera del estudiante no tiene una mensualidad configurada.");
         }
         return new ConfiguracionEstudianteDTO(carrera.getId(), carrera.getNombre(), carrera.getMensualidad(),
-                ciclo.getAnio(), ciclo.getId(), ciclo.getNombre(), carrera.getDiaVencimiento(), LocalDate.now());
+                cicloAnio, ciclo == null ? null : ciclo.getId(), ciclo == null ? null : ciclo.getNombre(),
+                carrera.getDiaVencimiento(), LocalDate.now());
     }
 
     @PostMapping
