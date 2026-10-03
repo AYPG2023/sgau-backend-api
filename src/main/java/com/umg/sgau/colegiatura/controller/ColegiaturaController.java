@@ -1,5 +1,6 @@
 package com.umg.sgau.colegiatura.controller;
 
+import com.umg.sgau.academico.MatriculaCarreraRepository;
 import com.umg.sgau.colegiatura.dto.ColegiaturaCreateRequestDTO;
 import com.umg.sgau.colegiatura.dto.ColegiaturaPagoRequestDTO;
 import com.umg.sgau.colegiatura.dto.ColegiaturaResponseDTO;
@@ -11,6 +12,7 @@ import com.umg.sgau.colegiatura.mapper.ColegiaturaMapper;
 import com.umg.sgau.colegiatura.service.ColegiaturaService;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,15 +29,36 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.transaction.annotation.Transactional;
 
 @RestController
 @RequestMapping("/api/colegiaturas")
 public class ColegiaturaController {
 
     private final ColegiaturaService colegiaturaService;
+    private final MatriculaCarreraRepository matriculas;
 
-    public ColegiaturaController(ColegiaturaService colegiaturaService) {
+    public ColegiaturaController(ColegiaturaService colegiaturaService, MatriculaCarreraRepository matriculas) {
         this.colegiaturaService = colegiaturaService;
+        this.matriculas = matriculas;
+    }
+
+    public record ConfiguracionEstudianteDTO(Long carreraId, String carreraNombre, BigDecimal mensualidad,
+            Integer cicloAnio, Long cicloId, String cicloNombre, Integer diaVencimiento, LocalDate fechaEmision) {}
+
+    @GetMapping("/configuracion-estudiante/{estudianteId}")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
+    @Transactional(readOnly = true)
+    public ConfiguracionEstudianteDTO configuracionEstudiante(@PathVariable Long estudianteId) {
+        var matricula = matriculas.findFirstByEstudiante_IdAndActivoTrueOrderByFechaInscripcionDesc(estudianteId)
+                .orElseThrow(() -> new IllegalArgumentException("El estudiante no tiene una carrera y ciclo activos."));
+        var carrera = matricula.getCarrera();
+        var ciclo = matricula.getCiclo();
+        if (carrera.getMensualidad() == null || carrera.getMensualidad().signum() <= 0) {
+            throw new IllegalArgumentException("La carrera del estudiante no tiene una mensualidad configurada.");
+        }
+        return new ConfiguracionEstudianteDTO(carrera.getId(), carrera.getNombre(), carrera.getMensualidad(),
+                ciclo.getAnio(), ciclo.getId(), ciclo.getNombre(), carrera.getDiaVencimiento(), LocalDate.now());
     }
 
     @PostMapping
