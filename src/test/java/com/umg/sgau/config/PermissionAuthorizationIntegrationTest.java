@@ -117,7 +117,7 @@ class PermissionAuthorizationIntegrationTest {
     }
 
     @Test
-    void inicializadorNoSobrescribePermisosAdministradosDeEstudiante() throws Exception {
+    void inicializadorConservaPermisosAdministradosYCompletaLaMatrizDeEstudiante() throws Exception {
         Permiso permisoElegido = permisoRepository.findByCodigoIgnoreCase(PermissionCatalog.NOTAS_LEER).orElseThrow();
         Rol estudiante = rolRepository.findByCodigoIgnoreCase("ESTUDIANTE").orElseGet(() -> {
             Rol nuevo = new Rol();
@@ -133,7 +133,9 @@ class PermissionAuthorizationIntegrationTest {
 
         Rol recargado = rolRepository.findWithPermisosById(estudiante.getId()).orElseThrow();
         assertThat(recargado.getPermisos()).extracting(Permiso::getCodigo)
-                .containsExactly(PermissionCatalog.NOTAS_LEER);
+                .contains(PermissionCatalog.NOTAS_LEER,
+                        PermissionCatalog.COLEGIATURAS_LEER,
+                        PermissionCatalog.COLEGIATURAS_REGISTRAR_PAGO);
     }
 
     private org.springframework.test.web.servlet.ResultActions login(String username) throws Exception {

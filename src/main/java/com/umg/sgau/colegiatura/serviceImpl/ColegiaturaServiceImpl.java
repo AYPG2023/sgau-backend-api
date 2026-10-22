@@ -10,6 +10,9 @@ import com.umg.sgau.colegiatura.exception.PagoColegiaturaInvalidoException;
 import com.umg.sgau.colegiatura.exception.PagoExcedeSaldoException;
 import com.umg.sgau.colegiatura.model.EstadoCuentaEstudiante;
 import com.umg.sgau.colegiatura.repository.ColegiaturaRepository;
+import com.umg.sgau.colegiatura.repository.SolicitudPagoRepository;
+import com.umg.sgau.colegiatura.dto.ResumenFinancieroCicloDTO;
+import com.umg.sgau.colegiatura.mapper.ColegiaturaMapper;
 import com.umg.sgau.colegiatura.service.ColegiaturaService;
 import com.umg.sgau.estudiante.entity.Estudiante;
 import com.umg.sgau.estudiante.exception.EstudianteNoEncontradoException;
@@ -41,6 +44,7 @@ public class ColegiaturaServiceImpl implements ColegiaturaService {
     private static final String ESTADO_ANULADA = "ANULADA";
 
     private final ColegiaturaRepository colegiaturaRepository;
+    private final SolicitudPagoRepository solicitudPagoRepository;
     private final EstudianteService estudianteService;
 
     @Override
@@ -295,6 +299,22 @@ public class ColegiaturaServiceImpl implements ColegiaturaService {
                 activas.size(),
                 cantidadPendientes,
                 activas);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResumenFinancieroCicloDTO resumenFinancieroCiclo(Long estudianteId, Integer cicloAnio) {
+        validarEstudianteExistente(estudianteId);
+        validarCiclo(cicloAnio);
+        List<Colegiatura> cargos = colegiaturaRepository
+                .findByEstudiante_IdAndCicloAnioAndActivoTrueOrderByFechaEmisionDesc(estudianteId, cicloAnio);
+        BigDecimal total = cargos.stream().map(Colegiatura::getMontoTotal).reduce(CERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal aprobado = cargos.stream().map(Colegiatura::getMontoPagado).reduce(CERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal saldo = cargos.stream().map(Colegiatura::getSaldoPendiente).reduce(CERO, BigDecimal::add).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal pendienteRevision = solicitudPagoRepository
+                .sumarPendientesPorEstudianteYCiclo(estudianteId, cicloAnio).setScale(2, RoundingMode.HALF_UP);
+        return new ResumenFinancieroCicloDTO(estudianteId, cicloAnio, total, aprobado, saldo, pendienteRevision,
+                cargos.stream().map(ColegiaturaMapper::toResponseDTO).toList());
     }
 
     private Estudiante validarEstudianteActivo(Long estudianteId) {

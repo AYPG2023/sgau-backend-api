@@ -93,6 +93,11 @@ public interface ColegiaturaRepository
 
     List<Colegiatura> findByActivoTrue();
 
+    List<Colegiatura> findByEstudiante_IdAndCicloAnioAndActivoTrueOrderByFechaEmisionDesc(
+            Long estudianteId,
+            Integer cicloAnio
+    );
+
     boolean existsByEstudiante_IdAndCicloAnioAndConceptoAndActivoTrue(
             Long estudianteId,
             Integer cicloAnio,

@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
+import com.umg.sgau.colegiatura.dto.ResumenFinancieroCicloDTO;
 
 public interface ColegiaturaService {
 
@@ -82,5 +83,7 @@ public interface ColegiaturaService {
     EstadoCuentaEstudiante generarEstadoCuenta(
             Long estudianteId
     );
+
+    ResumenFinancieroCicloDTO resumenFinancieroCiclo(Long estudianteId, Integer cicloAnio);
 
 }

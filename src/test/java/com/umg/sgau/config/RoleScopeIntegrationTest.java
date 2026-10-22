@@ -160,6 +160,7 @@ class RoleScopeIntegrationTest {
         autorizado(get("/api/notas/estudiante/" + ajeno.getId()), estudianteToken, 403);
         autorizado(get("/api/colegiaturas/" + cuotaAjena.getId()), estudianteToken, 403);
         autorizado(get("/api/colegiaturas/estudiante/" + ajeno.getId()), estudianteToken, 403);
+        autorizado(get("/api/colegiaturas/estudiante/" + propio.getId() + "/resumen-ciclo?cicloAnio=2026"), estudianteToken, 403);
         String estudianteSinCobrosToken = login("estudiante_sin_cobros");
         mockMvc.perform(get("/api/academico/estudiante/me/estado-cuenta").header("Authorization", "Bearer " + estudianteSinCobrosToken))
                 .andExpect(status().isOk())
@@ -188,6 +189,12 @@ class RoleScopeIntegrationTest {
 
         String adminToken = login("admin_scope");
         autorizado(get("/api/auditoria"), adminToken, 200);
+        mockMvc.perform(get("/api/colegiaturas/estudiante/" + propio.getId() + "/resumen-ciclo?cicloAnio=2026")
+                        .header("Authorization", "Bearer " + adminToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalCargos").value(1500.00))
+                .andExpect(jsonPath("$.totalPagosAprobados").value(700.00))
+                .andExpect(jsonPath("$.saldoPendiente").value(800.00));
         String altaManual = """
                 {"estudianteId":%d,"cicloAnio":2026,"concepto":"AJUSTE ADMINISTRATIVO","montoTotal":125.50,"fechaEmision":"%s","fechaVencimiento":"%s"}
                 """.formatted(sinCobros.getId(), LocalDate.now(), LocalDate.now().plusDays(20));

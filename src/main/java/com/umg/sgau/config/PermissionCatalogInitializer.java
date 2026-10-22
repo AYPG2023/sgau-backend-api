@@ -65,12 +65,11 @@ public class PermissionCatalogInitializer implements ApplicationRunner {
 
     private void asignarMatrizInicial(String codigoRol, Set<Permiso> catalogo, Set<String> codigos) {
         rolRepository.findByCodigoIgnoreCase(codigoRol).ifPresent(rol -> {
-            if (rol.getPermisos() != null && !rol.getPermisos().isEmpty()) {
-                return;
-            }
             Map<String, Permiso> porCodigo = catalogo.stream()
                     .collect(java.util.stream.Collectors.toMap(Permiso::getCodigo, permiso -> permiso));
-            Set<Permiso> permisos = new HashSet<>();
+            Set<Permiso> permisos = rol.getPermisos() == null
+                    ? new HashSet<>()
+                    : new HashSet<>(rol.getPermisos());
             codigos.forEach(codigo -> permisos.add(porCodigo.get(codigo)));
             rol.setPermisos(permisos);
             rolRepository.save(rol);

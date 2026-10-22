@@ -8,6 +8,7 @@ import com.umg.sgau.colegiatura.dto.ColegiaturaResponseDTO;
 import com.umg.sgau.colegiatura.dto.ColegiaturaStatusRequestDTO;
 import com.umg.sgau.colegiatura.dto.ColegiaturaUpdateRequestDTO;
 import com.umg.sgau.colegiatura.dto.EstadoCuentaResponseDTO;
+import com.umg.sgau.colegiatura.dto.ResumenFinancieroCicloDTO;
 import com.umg.sgau.colegiatura.entity.Colegiatura;
 import com.umg.sgau.colegiatura.mapper.ColegiaturaMapper;
 import com.umg.sgau.colegiatura.service.ColegiaturaService;
@@ -195,5 +196,13 @@ public class ColegiaturaController {
         return ResponseEntity.ok(
                 ColegiaturaMapper.toEstadoCuentaDTO(
                         colegiaturaService.generarEstadoCuenta(estudianteId)));
+    }
+
+    @GetMapping("/estudiante/{estudianteId}/resumen-ciclo")
+    @PreAuthorize("@accessScope.esAdmin(authentication)")
+    public ResponseEntity<ResumenFinancieroCicloDTO> resumenFinancieroCiclo(
+            @PathVariable Long estudianteId,
+            @RequestParam Integer cicloAnio) {
+        return ResponseEntity.ok(colegiaturaService.resumenFinancieroCiclo(estudianteId, cicloAnio));
     }
 }

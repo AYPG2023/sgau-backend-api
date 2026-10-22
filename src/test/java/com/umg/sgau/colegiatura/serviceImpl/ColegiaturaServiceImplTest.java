@@ -16,6 +16,7 @@ import com.umg.sgau.colegiatura.exception.PagoColegiaturaInvalidoException;
 import com.umg.sgau.colegiatura.exception.PagoExcedeSaldoException;
 import com.umg.sgau.colegiatura.model.EstadoCuentaEstudiante;
 import com.umg.sgau.colegiatura.repository.ColegiaturaRepository;
+import com.umg.sgau.colegiatura.repository.SolicitudPagoRepository;
 import com.umg.sgau.estudiante.entity.Estudiante;
 import com.umg.sgau.estudiante.exception.EstudianteNoEncontradoException;
 import com.umg.sgau.estudiante.service.EstudianteService;
@@ -39,13 +40,16 @@ class ColegiaturaServiceImplTest {
     private ColegiaturaRepository colegiaturaRepository;
 
     @Mock
+    private SolicitudPagoRepository solicitudPagoRepository;
+
+    @Mock
     private EstudianteService estudianteService;
 
     private ColegiaturaServiceImpl colegiaturaService;
 
     @BeforeEach
     void setUp() {
-        colegiaturaService = new ColegiaturaServiceImpl(colegiaturaRepository, estudianteService);
+        colegiaturaService = new ColegiaturaServiceImpl(colegiaturaRepository, solicitudPagoRepository, estudianteService);
     }
 
     @Test
@@ -321,6 +325,25 @@ class ColegiaturaServiceImplTest {
         Page<Colegiatura> pagina = colegiaturaService.obtenerActivasPorEstudiante(1L, pageable);
 
         assertThat(pagina.getContent()).hasSize(1);
+    }
+
+    @Test
+    void resumenFinancieroCicloSeparaPagosAprobadosDePendientesDeRevision() {
+        when(estudianteService.obtenerPorId(1L)).thenReturn(estudiante(1L, true));
+        when(colegiaturaRepository.findByEstudiante_IdAndCicloAnioAndActivoTrueOrderByFechaEmisionDesc(1L, 2026))
+                .thenReturn(List.of(
+                        cargoExistente(1L, true, "500.00", "200.00", "300.00", "PARCIAL"),
+                        cargoExistente(2L, true, "400.00", "400.00", "0.00", "PAGADA")));
+        when(solicitudPagoRepository.sumarPendientesPorEstudianteYCiclo(1L, 2026))
+                .thenReturn(new BigDecimal("125.00"));
+
+        var resumen = colegiaturaService.resumenFinancieroCiclo(1L, 2026);
+
+        assertThat(resumen.totalCargos()).isEqualByComparingTo("900.00");
+        assertThat(resumen.totalPagosAprobados()).isEqualByComparingTo("600.00");
+        assertThat(resumen.saldoPendiente()).isEqualByComparingTo("300.00");
+        assertThat(resumen.pagosPendientesRevision()).isEqualByComparingTo("125.00");
+        assertThat(resumen.colegiaturas()).hasSize(2);
     }
 
     private Colegiatura cargoNuevo(String concepto, String montoTotal) {
