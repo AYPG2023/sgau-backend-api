@@ -40,7 +40,8 @@ public class AuditoriaMutationAspect {
     @Around("within(@org.springframework.web.bind.annotation.RestController *) && execution(public * *(..))")
     public Object auditar(ProceedingJoinPoint jp) throws Throwable {
         String metodo = request.getMethod();
-        if (request.getRequestURI().equals("/api/auth/login")) return jp.proceed();
+        if (request.getRequestURI().equals("/api/auth/login")
+                || request.getRequestURI().equals("/api/auth/login/encrypted")) return jp.proceed();
         if (!(metodo.equals("POST") || metodo.equals("PUT") || metodo.equals("PATCH") || metodo.equals("DELETE")))
             return jp.proceed();
         Object[] args = jp.getArgs();

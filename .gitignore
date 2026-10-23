@@ -8,6 +8,8 @@ src/main/resources/application-prod.properties
 .env
 .env.*
 *.md
+!docs/
+!docs/login-jwe.md
 
 ### Maven ###
 target/
